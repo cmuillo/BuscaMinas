@@ -192,5 +192,5 @@ Los puntajes se almacenan en archivos **JSON** dentro de la carpeta `puntajes/`,
 
 ## Autor
 
-- **Desarrollador:** cmuillo  
+- **Desarrolladora:** Josselyn Hidalgo Torres  
 - **Repositorio:** [github.com/cmuillo/BuscaMinas](https://github.com/cmuillo/BuscaMinas)
