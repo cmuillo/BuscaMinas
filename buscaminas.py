@@ -17,7 +17,7 @@ from datetime import datetime
 
 
 # =============================================================================
-# CONSTANTE: NIVELES
+# CONSTANTE: niveles predefinidos
 # Diccionario con la configuración predefinida de cada nivel de dificultad.
 # Formato: 'NombreNivel': (filas, columnas, num_minas)
 # =============================================================================
