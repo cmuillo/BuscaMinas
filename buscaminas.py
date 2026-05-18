@@ -62,6 +62,7 @@ juego = {
 # BLOQUE 1: LOGICA DE TABLERO
 # ==========================
 def crear_tablero(filas, columnas, minas):
+    # FUNCION CLAVE 1: Inicializa toda la estructura base del juego en memoria.
     return {
         'filas': filas,
         'columnas': columnas,
@@ -120,6 +121,7 @@ def calcular_numeros(tablero):
 
 
 def expandir(tablero, fila, col):
+    # FUNCION CLAVE 2: Ejecuta la apertura en cadena de celdas vacias (flood fill).
     # Caso base: si no esta tapada, no se procesa de nuevo.
     if tablero['matriz_estado'][fila][col] != 'tapada':
         return
@@ -149,6 +151,7 @@ def expandir(tablero, fila, col):
 
 
 def descubrir(tablero, fila, col):
+    # FUNCION CLAVE 3: Controla la jugada principal (primer click seguro, mina o expansion).
     # En la primera jugada se colocan minas despues del click seguro.
     if tablero['primera_jugada']:
         colocar_minas(tablero, fila, col)
@@ -532,6 +535,7 @@ def pantalla_tablero():
 # BLOQUE 4: EVENTOS DE LA PARTIDA
 # ==========================
 def click_izquierdo(fila, col):
+    # FUNCION CLAVE 4: Conecta la UI con la logica del juego para cada jugada del usuario.
     tablero = juego['tablero']
 
     # Guardas de seguridad para evitar acciones invalidas.
@@ -572,6 +576,7 @@ def click_derecho(fila, col):
 
 
 def refrescar_grilla():
+    # FUNCION CLAVE 5: Convierte el estado interno del tablero en la vista visual de botones.
     tablero = juego['tablero']
     juego['lbl_minas'].config(text=f"💣 {tablero['minas'] - tablero['minas_marcadas']}")
 
