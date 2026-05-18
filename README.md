@@ -57,7 +57,7 @@ BuscaMinas/
 
 ---
 
-## Niveles de dificultad
+## Niveles de dificultades
 
 | Nivel       | Filas | Columnas | Minas |
 |-------------|------:|:--------:|------:|
