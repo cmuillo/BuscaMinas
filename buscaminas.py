@@ -576,7 +576,7 @@ def click_derecho(fila, col):
 
 
 def refrescar_grilla():
-    # FUNCION CLAVE 5: Convierte el estado interno del tablero en la vista visual de botones.
+    # FUNCION CLAVE 5: Cdonvierte el estado interno del tablero en la vista visual de botones.
     tablero = juego['tablero']
     juego['lbl_minas'].config(text=f"💣 {tablero['minas'] - tablero['minas_marcadas']}")
 
