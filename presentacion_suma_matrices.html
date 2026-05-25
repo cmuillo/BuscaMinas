@@ -243,7 +243,7 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
     </div>
   </div>
 
-  <!-- ══ 5 — Código por pila ══ -->
+  <!-- ══ 4 — Código por pila ══ -->
   <div class="slide">
     <div class="badge badge-pila">Por Pila</div>
     <h2>Código — <span class="hl">Recursión por Pila</span></h2>
@@ -254,6 +254,9 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
   <span class="cm">#      ↑────────── operación PENDIENTE en la pila</span>
 
 <span class="kw">def</span> <span class="fn">suma_matriz_pila</span>(matriz, fila=<span class="nm">0</span>):
+  <span class="kw">if</span> fila == <span class="nm">0</span>:                      <span class="cm"># solo en la primera llamada</span>
+      <span class="kw">if not</span> <span class="fn">isinstance</span>(matriz, list) <span class="kw">or</span> len(matriz) == <span class="nm">0</span>:
+          <span class="kw">raise</span> TypeError(<span class="st">f"Se esperaba lista, recibí: {<span class="kw">type</span>(matriz).__name__}"</span>)
   <span class="kw">if</span> fila == len(matriz):
       <span class="kw">return</span> <span class="nm">0</span>                       <span class="cm"># caso base</span>
   <span class="kw">return</span> <span class="fn">suma_fila_pila</span>(matriz[fila]) + <span class="fn">suma_matriz_pila</span>(matriz, fila + <span class="nm">1</span>)
@@ -261,11 +264,12 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
     <br/>
     <ul>
       <li>El caso base devuelve <span class="warn">0</span> (neutro de la suma).</li>
+      <li><span class="hl">isinstance()</span> valida al entrar: evita errores difíciles de rastrear.</li>
       <li>Las sumas se acumulan al <strong>volver</strong> de la recursión más profunda.</li>
     </ul>
   </div>
 
-  <!-- ══ 6 — Cola: cómo funciona ══ -->
+  <!-- ══ 5 — Cola: cómo funciona ══ -->
   <div class="slide">
     <div class="slide-tag">Recursión por Cola</div>
     <h2><span class="hl2">¿Cómo funciona el acumulador?</span></h2>
@@ -290,7 +294,7 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
     </div>
   </div>
 
-  <!-- ══ 7 — Código por cola ══ -->
+  <!-- ══ 6 — Código por cola ══ -->
   <div class="slide">
     <div class="badge badge-cola">Por Cola</div>
     <h2>Código — <span class="hl2">Recursión por Cola</span></h2>
@@ -302,17 +306,21 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
   <span class="cm">#       la llamada es todo el return → nada pendiente después</span>
 
 <span class="kw">def</span> <span class="fn2">suma_matriz_cola</span>(matriz, fila=<span class="nm">0</span>, <span class="ac">acum</span>=<span class="nm">0</span>):
+  <span class="kw">if</span> fila == <span class="nm">0</span>:                      <span class="cm"># solo en la primera llamada</span>
+      <span class="kw">if not</span> <span class="fn">isinstance</span>(matriz, list) <span class="kw">or</span> len(matriz) == <span class="nm">0</span>:
+          <span class="kw">raise</span> TypeError(<span class="st">f"Se esperaba lista, recibí: {<span class="kw">type</span>(matriz).__name__}"</span>)
   <span class="kw">if</span> fila == len(matriz):
       <span class="kw">return</span> <span class="ac">acum</span>                    <span class="cm"># caso base</span>
   <span class="kw">return</span> <span class="fn2">suma_matriz_cola</span>(matriz, fila + <span class="nm">1</span>, <span class="ac">acum</span> + <span class="fn2">suma_fila_cola</span>(matriz[fila]))</pre>
     <br/>
     <ul>
       <li>El caso base devuelve el <span class="hl3">acumulador</span> (ya tiene todo sumado).</li>
+      <li><span class="hl2">isinstance()</span> valida al entrar: evita errores difíciles de rastrear.</li>
       <li>La suma se hace <strong>antes</strong> de la llamada, en el argumento <span class="hl3">acum</span>.</li>
     </ul>
   </div>
 
-  <!-- ══ 8 — Comparación ══ -->
+  <!-- ══ 7 — Comparación ══ -->
   <div class="slide">
     <div class="slide-tag">Comparación</div>
     <h2>Pila <span style="color:#64748b;">vs</span> Cola — diferencias clave</h2>
@@ -331,7 +339,7 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
     <p style="font-size:.78rem;color:#64748b;margin-top:10px;">* Python no aplica TCO (Tail Call Optimization) automáticamente, pero el patrón es correcto y preparado para lenguajes que sí lo hacen.</p>
   </div>
 
-  <!-- ══ 9 — Ejercicio 1 ══ -->
+  <!-- ══ 8 — Ejercicio 1 ══ -->
   <div class="slide">
     <div class="badge">Ejercicio 1</div>
     <h2>Sumar una sola fila: <code style="color:#38bdf8;">[5, 10, 15]</code></h2>
@@ -361,7 +369,7 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
     </div>
   </div>
 
-  <!-- ══ 10 — Ejercicio 2 ══ -->
+  <!-- ══ 9 — Ejercicio 2 ══ -->
   <div class="slide">
     <div class="badge">Ejercicio 2</div>
     <h2>Matriz identidad 3×3</h2>
@@ -399,7 +407,7 @@ m = [ [<span class="nm">1</span>, <span class="nm">2</span>],   <span class="cm"
     </div>
   </div>
 
-  <!-- ══ 11 — Resumen ══ -->
+  <!-- ══ 10 — Resumen ══ -->
   <div class="slide">
     <div class="slide-tag">Resumen</div>
     <h2>Lo que aprendimos hoy</h2>

@@ -11,9 +11,57 @@
 #       [ [1, 2],      Fila 0
 #         [3, 4] ]     Fila 1
 #
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
+# isinstance() — VALIDACIÓN DE TIPOS
+# =============================================================================
+#
+# isinstance(objeto, tipo) devuelve True si 'objeto' es del tipo indicado.
+#
+# Lo usamos para verificar que la entrada sea realmente una matriz válida
+# ANTES de entrar a la recursión, evitando errores difíciles de rastrear.
+#
+# Ejemplos de isinstance():
+#   isinstance([1, 2], list)       → True
+#   isinstance("hola", list)       → False
+#   isinstance(3, (int, float))    → True   ← acepta int O float
+#   isinstance("3", (int, float))  → False
+#
+# En nuestra validación comprobamos:
+#   1. Que la matriz sea una lista              → isinstance(matriz, list)
+#   2. Que no esté vacía                        → len(matriz) > 0
+#   3. Que cada fila sea una lista              → isinstance(fila, list)
+#   4. Que cada elemento sea int o float        → isinstance(elem, (int, float))
+# =============================================================================
+
+
+def validar_matriz(matriz):
+    """
+    Verifica con isinstance() que 'matriz' sea una lista de listas de números.
+    Lanza TypeError con un mensaje claro si algo no cumple.
+    """
+
+    # ① ¿Es una lista?
+    if not isinstance(matriz, list) or len(matriz) == 0:
+        raise TypeError(f"Se esperaba una lista no vacía, pero se recibió: {type(matriz).__name__}")
+
+    for i, fila in enumerate(matriz):
+
+        # ② ¿Cada fila es una lista?
+        if not isinstance(fila, list) or len(fila) == 0:
+            raise TypeError(f"La fila {i} debe ser una lista no vacía, pero es: {type(fila).__name__}")
+
+        for j, elemento in enumerate(fila):
+
+            # ③ ¿Cada elemento es un número (int o float)?
+            if not isinstance(elemento, (int, float)):
+                raise TypeError(
+                    f"El elemento [{i}][{j}] debe ser int o float, "
+                    f"pero es: {type(elemento).__name__} (valor: {elemento!r})"
+                )
+
+# =============================================================================
 # TIPO 1 — RECURSIÓN POR PILA (stack recursion)
-# ─────────────────────────────────────────────────────────────────────────────
+# =============================================================================
 #
 # ¿CUÁNDO ocurre?
 #   Cuando después de la llamada recursiva todavía queda una operación
@@ -52,7 +100,13 @@ def suma_fila_pila(fila, col=0):
 
 
 def suma_matriz_pila(matriz, fila=0):
-    """Suma todos los elementos de la matriz — estilo PILA."""
+    """Suma todos los elementos de la matriz — estilo PILA.
+    En la primera llamada (fila=0) valida los tipos con isinstance().
+    """
+
+    # Validación solo en la llamada inicial (no en cada nivel recursivo)
+    if fila == 0:
+        validar_matriz(matriz)   # ← isinstance() aquí
 
     # CASO BASE: no quedan filas
     if fila == len(matriz):
@@ -102,7 +156,13 @@ def suma_fila_cola(fila, col=0, acum=0):
 
 
 def suma_matriz_cola(matriz, fila=0, acum=0):
-    """Suma todos los elementos de la matriz — estilo COLA."""
+    """Suma todos los elementos de la matriz — estilo COLA.
+    En la primera llamada (fila=0) valida los tipos con isinstance().
+    """
+
+    # Validación solo en la llamada inicial
+    if fila == 0:
+        validar_matriz(matriz)   # ← isinstance() aquí
 
     # CASO BASE: no quedan filas → devuelve el acumulador
     if fila == len(matriz):
@@ -276,3 +336,38 @@ print("Por cola:", max_matriz_cola(matriz))    # 4
 print("\n── Máximo de la identidad 3×3 ──")
 print("Por pila:", max_matriz_pila(identidad))  # 1
 print("Por cola:", max_matriz_cola(identidad))  # 1
+
+
+# =============================================================================
+# PRUEBAS DE isinstance() — qué pasa si la entrada es incorrecta
+# =============================================================================
+#
+# validar_matriz() se llama automáticamente al inicio de suma_matriz_pila
+# y suma_matriz_cola. Si los datos no son válidos, lanza un TypeError claro.
+
+print("\n── Pruebas de isinstance() ──")
+
+# Caso válido: lista de listas de números → sin error
+try:
+    validar_matriz([[1, 2], [3, 4]])
+    print("✓ [[1,2],[3,4]]       → válida")
+except TypeError as e:
+    print("✗", e)
+
+# Error: la matriz es un string, no una lista
+try:
+    validar_matriz("hola")
+except TypeError as e:
+    print("✗", e)
+
+# Error: una fila contiene un string en vez de número
+try:
+    validar_matriz([[1, 2], [3, "cuatro"]])
+except TypeError as e:
+    print("✗", e)
+
+# Error: se pasó un número suelto en vez de una lista de listas
+try:
+    validar_matriz(42)
+except TypeError as e:
+    print("✗", e)
