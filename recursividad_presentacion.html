@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Recursividad — Guía Visual de Estudio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ── Deck ── */
+    #deck { width: min(980px, 96vw); position: relative; }
+
+    .slide {
+      display: none;
+      background: #1e293b;
+      border-radius: 18px;
+      padding: 46px 56px;
+      box-shadow: 0 30px 70px rgba(0,0,0,.55);
+      min-height: 520px;
+      animation: fadeIn .3s ease;
+    }
+    .slide.active { display: flex; flex-direction: column; justify-content: center; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px);} to {opacity:1; transform:translateY(0);} }
+
+    /* ── Typography ── */
+    .tag {
+      font-size: .7rem; font-weight: 800; letter-spacing: .14em;
+      text-transform: uppercase; color: #38bdf8; margin-bottom: 10px;
+    }
+    h1 { font-size: 2.5rem; font-weight: 800; line-height: 1.12; color: #f1f5f9; }
+    h2 { font-size: 1.6rem; font-weight: 700; color: #f1f5f9; margin-bottom: 20px; }
+    h3 { font-size: 1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 10px; }
+    p  { font-size: .98rem; line-height: 1.75; color: #cbd5e1; }
+    li { font-size: .96rem; line-height: 1.75; color: #cbd5e1; }
+    ul { padding-left: 1.3rem; display: flex; flex-direction: column; gap: 8px; }
+    .sub { font-size: 1rem; color: #94a3b8; margin-top: 12px; line-height: 1.6; }
+
+    /* ── Colores temáticos ── */
+    .blue   { color: #38bdf8; font-weight: 700; }
+    .green  { color: #34d399; font-weight: 700; }
+    .purple { color: #c084fc; font-weight: 700; }
+    .orange { color: #fb923c; font-weight: 700; }
+    .red    { color: #f87171; font-weight: 700; }
+    .yellow { color: #fbbf24; font-weight: 700; }
+
+    /* ── Código ── */
+    pre {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 18px 22px;
+      font-size: .85rem;
+      font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+      overflow-x: auto;
+      line-height: 1.8;
+      color: #e2e8f0;
+    }
+    .kw  { color: #c084fc; }          /* keyword: def, if, return */
+    .fn  { color: #38bdf8; }          /* nombre función */
+    .cm  { color: #475569; font-style: italic; } /* comentario */
+    .nm  { color: #fb923c; }          /* número / valor */
+    .st  { color: #34d399; }          /* string / caso base */
+    .op  { color: #94a3b8; }          /* operadores */
+
+    /* ── Layout ── */
+    .cols   { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .cols3  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 660px) { .cols, .cols3 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 18px 22px;
+    }
+    .card-green  { border-color: #059669; }
+    .card-blue   { border-color: #2563eb; }
+    .card-purple { border-color: #7c3aed; }
+    .card-orange { border-color: #d97706; }
+
+    /* ── Árbol de llamadas ── */
+    .tree {
+      font-family: 'Cascadia Code','Consolas',monospace;
+      font-size: .83rem;
+      line-height: 2;
+      color: #bae6fd;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-left: 4px solid #38bdf8;
+      border-radius: 0 10px 10px 0;
+      padding: 16px 20px;
+    }
+    .tree .t-base  { color: #34d399; font-weight: 700; }
+    .tree .t-ret   { color: #fb923c; font-weight: 700; }
+    .tree .t-call  { color: #c084fc; }
+    .tree .t-cmp   { color: #fbbf24; }
+
+    /* ── Pila de llamadas visual ── */
+    .stack-visual {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 5px;
+      align-items: flex-start;
+    }
+    .frame {
+      padding: 8px 18px;
+      border-radius: 7px;
+      font-family: 'Cascadia Code','Consolas',monospace;
+      font-size: .82rem;
+      font-weight: 600;
+      min-width: 220px;
+      text-align: center;
+      transition: transform .2s;
+    }
+    .frame:hover { transform: translateX(6px); }
+    .frame.f-n  { background: #1e3a5f; border: 1px solid #2563eb; color: #93c5fd; }
+    .frame.f-base { background: #1e4a3a; border: 1px solid #059669; color: #34d399; }
+
+    .stack-label {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: #475569; margin-bottom: 6px;
+    }
+
+    /* ── Badges de concepto ── */
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .badge-base   { background: #1e4a3a; color: #34d399; border: 1px solid #059669; }
+    .badge-rec    { background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb; }
+    .badge-danger { background: #4a1e1e; color: #f87171; border: 1px solid #dc2626; }
+
+    /* ── Tabla resumen ── */
+    table { width: 100%; border-collapse: collapse; font-size: .91rem; }
+    th, td { padding: 12px 16px; border: 1px solid #334155; text-align: left; }
+    th { background: #0f172a; color: #94a3b8; font-weight: 700; font-size: .8rem;
+         text-transform: uppercase; letter-spacing: .07em; }
+    td { color: #cbd5e1; }
+    tr:nth-child(even) td { background: #ffffff08; }
+
+    /* ── Diagrama analogía ── */
+    .analogy {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 18px 0;
+    }
+    .analogy-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: .88rem;
+      text-align: center;
+      flex: 1;
+    }
+    .analogy-arrow {
+      font-size: 1.4rem;
+      color: #475569;
+      padding: 0 10px;
+    }
+
+    /* ── Comparativa bloques de código inline ── */
+    code {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-family: 'Cascadia Code','Consolas',monospace;
+      font-size: .85em;
+      color: #c084fc;
+    }
+
+    /* ── Barra de progreso ── */
+    #progress-bar {
+      width: min(980px, 96vw);
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      margin-bottom: 14px;
+    }
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #c084fc);
+      border-radius: 2px;
+      transition: width .3s ease;
+    }
+
+    /* ── Navegación ── */
+    #nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: min(980px, 96vw);
+      margin-top: 18px;
+    }
+    .btn {
+      background: #334155;
+      color: #e2e8f0;
+      border: none;
+      padding: 10px 26px;
+      border-radius: 8px;
+      font-size: .92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      user-select: none;
+    }
+    .btn:hover  { background: #475569; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+    .btn-primary { background: #0369a1; }
+    .btn-primary:hover { background: #0284c7; }
+
+    #slide-counter { font-size: .85rem; color: #64748b; font-weight: 600; }
+
+    /* ── Índice (slide 0) ── */
+    .index-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .index-item {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .index-item:hover { border-color: #38bdf8; background: #172035; }
+    .index-num {
+      width: 32px; height: 32px;
+      background: #1e3a5f;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: .85rem; color: #38bdf8;
+      flex-shrink: 0;
+    }
+    .index-text { font-size: .9rem; color: #cbd5e1; font-weight: 600; }
+
+    /* ── Highlight line in pre ── */
+    .hl-line { background: #1e3a5f; border-radius: 4px; display: block; padding: 0 4px; margin: 0 -4px; }
+    .hl-base { background: #1e4a3a; border-radius: 4px; display: block; padding: 0 4px; margin: 0 -4px; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"><div id="progress-fill"></div></div>
+
+<div id="deck">
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 0 — Portada / Índice
+  ═══════════════════════════════════════════ -->
+  <div class="slide active" id="s0">
+    <div class="tag">Algoritmos · Python</div>
+    <h1>Recursividad</h1>
+    <p class="sub">Guía visual de estudio — 4 ejemplos explicados paso a paso</p>
+
+    <div class="index-grid">
+      <div class="index-item" onclick="goTo(1)">
+        <div class="index-num">1</div>
+        <div>
+          <div class="index-text">¿Qué es la recursividad?</div>
+          <div style="font-size:.78rem;color:#64748b;margin-top:2px">Concepto, anatomía y pila</div>
+        </div>
+      </div>
+      <div class="index-item" onclick="goTo(3)">
+        <div class="index-num" style="background:#3b1f5e;color:#c084fc">2</div>
+        <div>
+          <div class="index-text">Factorial</div>
+          <div style="font-size:.78rem;color:#64748b;margin-top:2px">factorial(n) = n × (n−1) × … × 1</div>
+        </div>
+      </div>
+      <div class="index-item" onclick="goTo(5)">
+        <div class="index-num" style="background:#1e4a3a;color:#34d399">3</div>
+        <div>
+          <div class="index-text">Suma de naturales</div>
+          <div style="font-size:.78rem;color:#64748b;margin-top:2px">suma(n) = n + (n−1) + … + 1</div>
+        </div>
+      </div>
+      <div class="index-item" onclick="goTo(7)">
+        <div class="index-num" style="background:#4a2e1a;color:#fb923c">4</div>
+        <div>
+          <div class="index-text">Suma de lista</div>
+          <div style="font-size:.78rem;color:#64748b;margin-top:2px">Recorrer lista con lista[1:]</div>
+        </div>
+      </div>
+      <div class="index-item" onclick="goTo(9)" style="grid-column: span 2;">
+        <div class="index-num" style="background:#3b2a1a;color:#fbbf24">5</div>
+        <div>
+          <div class="index-text">Máximo de lista</div>
+          <div style="font-size:.78rem;color:#64748b;margin-top:2px">Comparar elemento a elemento recursivamente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 1 — ¿Qué es la recursividad?
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s1">
+    <div class="tag">Concepto fundamental</div>
+    <h2>¿Qué es la recursividad?</h2>
+
+    <p>Una función es <span class="blue">recursiva</span> cuando <strong>se llama a sí misma</strong> dentro de su propio cuerpo, resolviendo cada vez un problema <span class="green">más pequeño</span>, hasta llegar a un caso tan simple que se resuelve directamente.</p>
+
+    <div class="analogy" style="margin-top:24px">
+      <div class="analogy-box">
+        <div style="font-size:1.5rem;margin-bottom:6px">🔍</div>
+        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:4px">Problema original</div>
+        <div class="blue">factorial(4)</div>
+      </div>
+      <div class="analogy-arrow">→</div>
+      <div class="analogy-box">
+        <div style="font-size:1.5rem;margin-bottom:6px">✂️</div>
+        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:4px">Reducir</div>
+        <div class="purple">4 × factorial(3)</div>
+      </div>
+      <div class="analogy-arrow">→</div>
+      <div class="analogy-box">
+        <div style="font-size:1.5rem;margin-bottom:6px">✂️</div>
+        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:4px">Más pequeño</div>
+        <div class="purple">3 × factorial(2)</div>
+      </div>
+      <div class="analogy-arrow">→</div>
+      <div class="analogy-box" style="border-color:#059669">
+        <div style="font-size:1.5rem;margin-bottom:6px">🛑</div>
+        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:4px">Caso base</div>
+        <div class="green">factorial(1) = 1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 2 — Anatomía de una función recursiva
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s2">
+    <div class="tag">Concepto fundamental</div>
+    <h2>Anatomía de una función recursiva</h2>
+
+    <div class="cols" style="gap:28px;align-items:stretch">
+      <div>
+        <pre><span class="kw">def</span> <span class="fn">mi_funcion</span>(n):
+
+    <span class="cm"># ① CASO BASE ──────────────────────</span>
+    <span class="hl-base"><span class="kw">if</span> n <span class="op">==</span> <span class="nm">0</span>:</span>
+    <span class="hl-base">    <span class="kw">return</span> <span class="nm">0</span></span>
+
+    <span class="cm"># ② LLAMADA RECURSIVA ──────────────</span>
+    <span class="hl-line"><span class="kw">return</span> n <span class="op">+</span> <span class="fn">mi_funcion</span>(n <span class="op">-</span> <span class="nm">1</span>)</span></pre>
+
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <span class="badge badge-base">① Caso base</span>
+          <span class="badge badge-rec">② Llamada recursiva</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card card-green">
+          <h3 class="green">① Caso base</h3>
+          <p>Condición <code>if</code> que devuelve un valor <strong>directamente</strong>, sin llamarse a sí misma. Es la <strong>condición de parada</strong>.</p>
+          <p style="margin-top:8px;color:#f87171;font-size:.88rem">⚠️ Sin caso base → bucle infinito → error de pila (<em>RecursionError</em>)</p>
+        </div>
+        <div class="card card-blue">
+          <h3 class="blue">② Llamada recursiva</h3>
+          <p>Se llama a sí misma con un argumento <strong>más cercano al caso base</strong> (n−1, lista más corta, etc.). El resultado se usa para calcular la respuesta actual.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 3 — Factorial: código
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s3">
+    <div class="tag">Ejemplo 1</div>
+    <h2>Factorial — Código</h2>
+
+    <div class="cols">
+      <div>
+        <pre><span class="kw">def</span> <span class="fn">factorial</span>(n):
+
+    <span class="cm"># CASO BASE</span>
+    <span class="hl-base"><span class="kw">if</span> n <span class="op">==</span> <span class="nm">0</span> <span class="kw">or</span> n <span class="op">==</span> <span class="nm">1</span>:</span>
+    <span class="hl-base">    <span class="kw">return</span> <span class="nm">1</span></span>
+
+    <span class="cm"># LLAMADA RECURSIVA</span>
+    <span class="hl-line"><span class="kw">return</span> n <span class="op">*</span> <span class="fn">factorial</span>(n <span class="op">-</span> <span class="nm">1</span>)</span></pre>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card card-green">
+          <h3 class="green">Caso base</h3>
+          <p>Si <code>n</code> es <code>0</code> o <code>1</code>, devuelve <code>1</code> directamente. No hay más multiplicaciones posibles.</p>
+        </div>
+        <div class="card card-blue">
+          <h3 class="blue">Llamada recursiva</h3>
+          <p>Multiplica <code>n</code> por el factorial del número anterior: <code>factorial(n-1)</code>. Cada llamada reduce <code>n</code> en 1.</p>
+        </div>
+        <div class="card card-orange">
+          <h3 class="orange">Fórmula matemática</h3>
+          <p style="font-family:'Cascadia Code',monospace;font-size:.9rem">
+            factorial(n) = n × (n−1) × … × 1<br>
+            factorial(4) = 4 × 3 × 2 × 1 = <span class="orange">24</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 4 — Factorial: árbol de ejecución
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s4">
+    <div class="tag">Ejemplo 1 — Traza</div>
+    <h2>Factorial — Ejecución paso a paso</h2>
+
+    <div class="cols" style="align-items:start">
+      <div>
+        <p style="margin-bottom:12px;font-size:.88rem;color:#94a3b8">BAJADA → se apilan las llamadas</p>
+        <div class="tree">
+<span class="t-call">factorial(4)</span>
+  └─ <span class="t-call">4 × factorial(3)</span>
+        └─ <span class="t-call">3 × factorial(2)</span>
+              └─ <span class="t-call">2 × factorial(1)</span>
+                    └─ <span class="t-base">devuelve 1  ← CASO BASE</span>
+        </div>
+        <p style="margin-top:16px;margin-bottom:12px;font-size:.88rem;color:#94a3b8">SUBIDA → se van resolviendo</p>
+        <div class="tree" style="border-left-color:#fb923c;color:#fed7aa">
+2 × 1 = <span class="t-ret">2</span>
+3 × 2 = <span class="t-ret">6</span>
+4 × 6 = <span class="t-ret">24</span>  ← resultado final
+        </div>
+      </div>
+
+      <div>
+        <p style="margin-bottom:10px;font-size:.88rem;color:#94a3b8">PILA DE LLAMADAS (memoria)</p>
+        <div class="stack-label">Tope de la pila → caso base</div>
+        <div class="stack-visual">
+          <div class="frame f-n">factorial(4) — espera</div>
+          <div class="frame f-n">factorial(3) — espera</div>
+          <div class="frame f-n">factorial(2) — espera</div>
+          <div class="frame f-base">factorial(1) → devuelve 1</div>
+        </div>
+        <div style="margin-top:18px;padding:14px 18px;background:#0f172a;border-radius:10px;border:1px solid #334155">
+          <p style="font-size:.85rem;color:#64748b;margin-bottom:6px">Prueba rápida:</p>
+          <p style="font-family:'Cascadia Code',monospace;font-size:.9rem">
+            factorial(0) = <span class="green">1</span><br>
+            factorial(1) = <span class="green">1</span><br>
+            factorial(4) = <span class="orange">24</span><br>
+            factorial(5) = <span class="orange">120</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 5 — Suma naturales: código
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s5">
+    <div class="tag">Ejemplo 2</div>
+    <h2>Suma de naturales — Código</h2>
+
+    <div class="cols">
+      <div>
+        <pre><span class="kw">def</span> <span class="fn">suma</span>(n):
+
+    <span class="cm"># CASO BASE</span>
+    <span class="hl-base"><span class="kw">if</span> n <span class="op">==</span> <span class="nm">0</span>:</span>
+    <span class="hl-base">    <span class="kw">return</span> <span class="nm">0</span></span>
+
+    <span class="cm"># LLAMADA RECURSIVA</span>
+    <span class="hl-line"><span class="kw">return</span> n <span class="op">+</span> <span class="fn">suma</span>(n <span class="op">-</span> <span class="nm">1</span>)</span></pre>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card card-green">
+          <h3 class="green">Caso base</h3>
+          <p>Si <code>n == 0</code>, no hay nada que sumar → devuelve <code>0</code>.</p>
+        </div>
+        <div class="card card-blue">
+          <h3 class="blue">Llamada recursiva</h3>
+          <p>Suma <code>n</code> al resultado de sumar los anteriores: <code>suma(n-1)</code>.</p>
+        </div>
+        <div style="padding:14px 18px;background:#0f172a;border-radius:10px;border:1px solid #334155">
+          <p style="font-size:.85rem;color:#64748b;margin-bottom:8px">¿Por qué funciona?</p>
+          <p style="font-family:'Cascadia Code',monospace;font-size:.88rem;color:#cbd5e1">
+            suma(4) = 4 + suma(3)<br>
+                    = 4 + 3 + suma(2)<br>
+                    = 4 + 3 + 2 + suma(1)<br>
+                    = 4 + 3 + 2 + 1 + suma(0)<br>
+                    = 4 + 3 + 2 + 1 + <span class="green">0</span><br>
+                    = <span class="orange">10</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 6 — Suma naturales: árbol
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s6">
+    <div class="tag">Ejemplo 2 — Traza</div>
+    <h2>Suma de naturales — Ejecución paso a paso</h2>
+
+    <div class="cols" style="align-items:start">
+      <div>
+        <p style="margin-bottom:12px;font-size:.88rem;color:#94a3b8">BAJADA → acumulando llamadas</p>
+        <div class="tree">
+<span class="t-call">suma(4)</span>
+  └─ <span class="t-call">4 + suma(3)</span>
+          └─ <span class="t-call">3 + suma(2)</span>
+                  └─ <span class="t-call">2 + suma(1)</span>
+                          └─ <span class="t-call">1 + suma(0)</span>
+                                  └─ <span class="t-base">devuelve 0  ← CASO BASE</span>
+        </div>
+        <p style="margin-top:16px;margin-bottom:12px;font-size:.88rem;color:#94a3b8">SUBIDA → calculando resultados</p>
+        <div class="tree" style="border-left-color:#fb923c;color:#fed7aa">
+1 + 0 = <span class="t-ret">1</span>
+2 + 1 = <span class="t-ret">3</span>
+3 + 3 = <span class="t-ret">6</span>
+4 + 6 = <span class="t-ret">10</span>  ← resultado final
+        </div>
+      </div>
+
+      <div>
+        <p style="margin-bottom:10px;font-size:.88rem;color:#94a3b8">Diferencia con Factorial</p>
+        <table>
+          <thead>
+            <tr><th></th><th>factorial(n)</th><th>suma(n)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Operación</td><td>multiplicar ×</td><td>sumar +</td></tr>
+            <tr><td>Caso base</td><td>n == 0 o 1 → 1</td><td>n == 0 → 0</td></tr>
+            <tr><td>Reducción</td><td>n - 1</td><td>n - 1</td></tr>
+            <tr><td>suma(4)</td><td>4×3×2×1 = 24</td><td>4+3+2+1 = 10</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:14px;padding:14px 18px;background:#0f172a;border-radius:10px;border:1px solid #334155">
+          <p style="font-family:'Cascadia Code',monospace;font-size:.9rem">
+            suma(0) = <span class="green">0</span><br>
+            suma(1) = <span class="green">1</span><br>
+            suma(4) = <span class="orange">10</span><br>
+            suma(5) = <span class="orange">15</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 7 — Suma de lista: código
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s7">
+    <div class="tag">Ejemplo 3</div>
+    <h2>Suma de lista — Código</h2>
+
+    <div class="cols">
+      <div>
+        <pre><span class="kw">def</span> <span class="fn">suma_lista</span>(lista):
+
+    <span class="cm"># CASO BASE</span>
+    <span class="hl-base"><span class="kw">if</span> <span class="fn">len</span>(lista) <span class="op">==</span> <span class="nm">0</span>:</span>
+    <span class="hl-base">    <span class="kw">return</span> <span class="nm">0</span></span>
+
+    <span class="cm"># LLAMADA RECURSIVA</span>
+    <span class="hl-line"><span class="kw">return</span> lista[<span class="nm">0</span>] <span class="op">+</span> <span class="fn">suma_lista</span>(lista[<span class="nm">1</span>:])</span></pre>
+
+        <div style="margin-top:16px;padding:14px 18px;background:#0f172a;border-radius:10px;border:1px solid #334155">
+          <p style="font-size:.82rem;color:#94a3b8;margin-bottom:8px">Clave: slicing de listas</p>
+          <p style="font-family:'Cascadia Code',monospace;font-size:.85rem;color:#cbd5e1">
+            lista    = [<span class="orange">3</span>, 1, 4, 2]<br>
+            lista[0] = <span class="orange">3</span>          <span class="cm">← primer elemento</span><br>
+            lista[1:]= [1, 4, 2]   <span class="cm">← el resto</span>
+          </p>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card card-green">
+          <h3 class="green">Caso base</h3>
+          <p>Lista <strong>vacía</strong> (<code>len(lista) == 0</code>) → devuelve <code>0</code>. No hay elementos que sumar.</p>
+        </div>
+        <div class="card card-blue">
+          <h3 class="blue">Llamada recursiva</h3>
+          <p>Toma el <strong>primer elemento</strong> <code>lista[0]</code> y lo suma al resultado de <code>suma_lista</code> del <strong>resto</strong> <code>lista[1:]</code>.</p>
+          <p style="margin-top:8px;color:#94a3b8;font-size:.85rem">Cada llamada la lista se hace 1 elemento más corta, hasta quedar vacía.</p>
+        </div>
+        <div class="card card-orange">
+          <h3 class="orange">Patrón con listas</h3>
+          <p style="font-size:.88rem">En vez de reducir <code>n-1</code>, reducimos la lista con <code>lista[1:]</code>. El principio es el mismo: acercarse al caso base.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 8 — Suma de lista: árbol
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s8">
+    <div class="tag">Ejemplo 3 — Traza</div>
+    <h2>Suma de lista — Ejecución paso a paso</h2>
+
+    <div class="cols" style="align-items:start">
+      <div>
+        <p style="margin-bottom:12px;font-size:.88rem;color:#94a3b8">suma_lista([3, 1, 4, 2])</p>
+        <div class="tree">
+<span class="t-call">suma_lista([3, 1, 4, 2])</span>
+  └─ <span class="t-call">3 + suma_lista([1, 4, 2])</span>
+             └─ <span class="t-call">1 + suma_lista([4, 2])</span>
+                        └─ <span class="t-call">4 + suma_lista([2])</span>
+                                   └─ <span class="t-call">2 + suma_lista([])</span>
+                                              └─ <span class="t-base">devuelve 0  ← BASE</span>
+        </div>
+        <p style="margin-top:16px;margin-bottom:12px;font-size:.88rem;color:#94a3b8">SUBIDA →</p>
+        <div class="tree" style="border-left-color:#fb923c;color:#fed7aa">
+2 + 0 = <span class="t-ret">2</span>
+4 + 2 = <span class="t-ret">6</span>
+1 + 6 = <span class="t-ret">7</span>
+3 + 7 = <span class="t-ret">10</span>  ← resultado final
+        </div>
+      </div>
+
+      <div>
+        <p style="margin-bottom:10px;font-size:.88rem;color:#94a3b8">¿Qué pasa con la lista?</p>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Cascadia Code',monospace;font-size:.83rem">
+            <span style="color:#94a3b8;width:80px">llamada 1</span>
+            <span style="background:#1e3a5f;border:1px solid #2563eb;border-radius:6px;padding:5px 12px;color:#93c5fd">[3, 1, 4, 2]</span>
+            <span style="color:#fb923c">→ toma 3</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Cascadia Code',monospace;font-size:.83rem">
+            <span style="color:#94a3b8;width:80px">llamada 2</span>
+            <span style="background:#1e3a5f;border:1px solid #2563eb;border-radius:6px;padding:5px 12px;color:#93c5fd">[1, 4, 2]</span>
+            <span style="color:#fb923c">→ toma 1</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Cascadia Code',monospace;font-size:.83rem">
+            <span style="color:#94a3b8;width:80px">llamada 3</span>
+            <span style="background:#1e3a5f;border:1px solid #2563eb;border-radius:6px;padding:5px 12px;color:#93c5fd">[4, 2]</span>
+            <span style="color:#fb923c">→ toma 4</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Cascadia Code',monospace;font-size:.83rem">
+            <span style="color:#94a3b8;width:80px">llamada 4</span>
+            <span style="background:#1e3a5f;border:1px solid #2563eb;border-radius:6px;padding:5px 12px;color:#93c5fd">[2]</span>
+            <span style="color:#fb923c">→ toma 2</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Cascadia Code',monospace;font-size:.83rem">
+            <span style="color:#94a3b8;width:80px">llamada 5</span>
+            <span style="background:#1e4a3a;border:1px solid #059669;border-radius:6px;padding:5px 12px;color:#34d399">[]  CASO BASE</span>
+            <span style="color:#34d399">→ 0</span>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding:14px 18px;background:#0f172a;border-radius:10px;border:1px solid #334155">
+          <p style="font-family:'Cascadia Code',monospace;font-size:.9rem">
+            suma_lista([])        = <span class="green">0</span><br>
+            suma_lista([5])       = <span class="green">5</span><br>
+            suma_lista([3,1,4,2]) = <span class="orange">10</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 9 — Máximo de lista: código
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s9">
+    <div class="tag">Ejemplo 4</div>
+    <h2>Máximo de lista — Código</h2>
+
+    <div class="cols">
+      <div>
+        <pre><span class="kw">def</span> <span class="fn">maximo</span>(lista):
+
+    <span class="cm"># CASO BASE: lista de 1 elemento</span>
+    <span class="hl-base"><span class="kw">if</span> <span class="fn">len</span>(lista) <span class="op">==</span> <span class="nm">1</span>:</span>
+    <span class="hl-base">    <span class="kw">return</span> lista[<span class="nm">0</span>]</span>
+
+    <span class="cm"># Máximo del resto</span>
+    <span class="hl-line">max_resto <span class="op">=</span> <span class="fn">maximo</span>(lista[<span class="nm">1</span>:])</span>
+
+    <span class="cm"># Comparar primero vs. máximo del resto</span>
+    <span class="kw">if</span> lista[<span class="nm">0</span>] <span class="op">></span> max_resto:
+        <span class="kw">return</span> lista[<span class="nm">0</span>]
+    <span class="kw">else</span>:
+        <span class="kw">return</span> max_resto</pre>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card card-green">
+          <h3 class="green">Caso base</h3>
+          <p>Lista de <strong>un solo elemento</strong> (<code>len(lista) == 1</code>). Ese único elemento ya es el máximo por definición.</p>
+          <p style="margin-top:6px;font-size:.85rem;color:#94a3b8">⚠️ Aquí no usamos lista vacía porque comparar requiere al menos 1 elemento.</p>
+        </div>
+        <div class="card card-blue">
+          <h3 class="blue">Idea principal</h3>
+          <p>Guarda el máximo del <strong>resto</strong> en <code>max_resto</code>, luego compara con <code>lista[0]</code>. El ganador se devuelve hacia arriba.</p>
+        </div>
+        <div class="card" style="border-color:#fbbf24">
+          <h3 class="yellow">Novedad respecto a suma</h3>
+          <p style="font-size:.88rem">En vez de operar directamente (<code>lista[0] + …</code>), guardamos el resultado recursivo en una variable para poder compararlo.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 10 — Máximo de lista: árbol
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s10">
+    <div class="tag">Ejemplo 4 — Traza</div>
+    <h2>Máximo de lista — Ejecución paso a paso</h2>
+
+    <div class="cols" style="align-items:start">
+      <div>
+        <p style="margin-bottom:12px;font-size:.88rem;color:#94a3b8">maximo([3, 7, 1, 5])</p>
+        <div class="tree">
+<span class="t-call">maximo([3, 7, 1, 5])</span>
+  max_resto = <span class="t-call">maximo([7, 1, 5])</span>
+                max_resto = <span class="t-call">maximo([1, 5])</span>
+                              max_resto = <span class="t-call">maximo([5])</span>
+                                            └─ <span class="t-base">devuelve 5  ← BASE</span>
+                              <span class="t-cmp">¿1 > 5? No</span>  → devuelve <span class="t-ret">5</span>
+                <span class="t-cmp">¿7 > 5? Sí</span> → devuelve <span class="t-ret">7</span>
+  <span class="t-cmp">¿3 > 7? No</span>  → devuelve <span class="t-ret">7</span>  ← resultado
+        </div>
+      </div>
+
+      <div>
+        <p style="margin-bottom:10px;font-size:.88rem;color:#94a3b8">¿Qué pasa en cada comparación?</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="card" style="padding:12px 16px">
+            <div style="font-family:'Cascadia Code',monospace;font-size:.83rem;display:flex;gap:10px;align-items:center">
+              <span style="background:#1e4a3a;border:1px solid #059669;border-radius:6px;padding:4px 10px;color:#34d399">maximo([5]) = 5</span>
+              <span style="color:#64748b">caso base</span>
+            </div>
+          </div>
+          <div class="card" style="padding:12px 16px">
+            <div style="font-family:'Cascadia Code',monospace;font-size:.83rem">
+              lista[0]=<span class="orange">1</span>, max_resto=<span class="orange">5</span> → <span class="yellow">¿1&gt;5?</span> No → devuelve <span class="green">5</span>
+            </div>
+          </div>
+          <div class="card" style="padding:12px 16px">
+            <div style="font-family:'Cascadia Code',monospace;font-size:.83rem">
+              lista[0]=<span class="orange">7</span>, max_resto=<span class="orange">5</span> → <span class="yellow">¿7&gt;5?</span> Sí → devuelve <span class="green">7</span>
+            </div>
+          </div>
+          <div class="card" style="padding:12px 16px">
+            <div style="font-family:'Cascadia Code',monospace;font-size:.83rem">
+              lista[0]=<span class="orange">3</span>, max_resto=<span class="orange">7</span> → <span class="yellow">¿3&gt;7?</span> No → devuelve <span class="green">7</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;padding:14px 18px;background:#0f172a;border-radius:10px;border:1px solid #334155">
+          <p style="font-family:'Cascadia Code',monospace;font-size:.9rem">
+            maximo([5])       = <span class="green">5</span><br>
+            maximo([3,7,1,5]) = <span class="orange">7</span><br>
+            maximo([4,2,9,6]) = <span class="orange">9</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 11 — Resumen comparativo
+  ═══════════════════════════════════════════ -->
+  <div class="slide" id="s11">
+    <div class="tag">Resumen</div>
+    <h2>Los 4 ejemplos de un vistazo</h2>
+
+    <table style="margin-top:4px">
+      <thead>
+        <tr>
+          <th>Función</th>
+          <th>Caso base</th>
+          <th>Llamada recursiva</th>
+          <th>Ejemplo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="purple">factorial(n)</span></td>
+          <td><code>n == 0 or n == 1 → 1</code></td>
+          <td><code>n * factorial(n-1)</code></td>
+          <td><span class="orange">factorial(4) = 24</span></td>
+        </tr>
+        <tr>
+          <td><span class="blue">suma(n)</span></td>
+          <td><code>n == 0 → 0</code></td>
+          <td><code>n + suma(n-1)</code></td>
+          <td><span class="orange">suma(4) = 10</span></td>
+        </tr>
+        <tr>
+          <td><span class="green">suma_lista(lista)</span></td>
+          <td><code>len(lista) == 0 → 0</code></td>
+          <td><code>lista[0] + suma_lista(lista[1:])</code></td>
+          <td><span class="orange">suma_lista([3,1,4,2]) = 10</span></td>
+        </tr>
+        <tr>
+          <td><span class="yellow">maximo(lista)</span></td>
+          <td><code>len(lista) == 1 → lista[0]</code></td>
+          <td><code>max_resto = maximo(lista[1:])</code> + comparación</td>
+          <td><span class="orange">maximo([3,7,1,5]) = 7</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="cols3" style="margin-top:22px">
+      <div class="card card-green">
+        <h3 class="green">Regla 1</h3>
+        <p style="font-size:.88rem">El <strong>caso base</strong> siempre devuelve un valor directo, sin llamarse a sí mismo.</p>
+      </div>
+      <div class="card card-blue">
+        <h3 class="blue">Regla 2</h3>
+        <p style="font-size:.88rem">La <strong>llamada recursiva</strong> usa un argumento más pequeño o una lista más corta.</p>
+      </div>
+      <div class="card" style="border-color:#dc2626">
+        <h3 class="red">Regla 3</h3>
+        <p style="font-size:.88rem">Sin caso base → <strong>recursión infinita</strong> → <em>RecursionError</em>. Siempre define el caso base primero.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- ── Navegación ── -->
+<div id="nav">
+  <button class="btn" id="btn-prev" onclick="move(-1)" disabled>← Anterior</button>
+  <span id="slide-counter">1 / 12</span>
+  <button class="btn btn-primary" id="btn-next" onclick="move(1)">Siguiente →</button>
+</div>
+
+<script>
+  const TOTAL = 12;
+  let current = 0;
+
+  function goTo(n) {
+    document.getElementById('s' + current).classList.remove('active');
+    current = n;
+    document.getElementById('s' + current).classList.add('active');
+    updateNav();
+  }
+
+  function move(dir) {
+    goTo(Math.max(0, Math.min(TOTAL - 1, current + dir)));
+  }
+
+  function updateNav() {
+    document.getElementById('btn-prev').disabled = current === 0;
+    document.getElementById('btn-next').disabled = current === TOTAL - 1;
+    document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + TOTAL;
+    document.getElementById('progress-fill').style.width = ((current + 1) / TOTAL * 100) + '%';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   move(-1);
+  });
+
+  updateNav();
+</script>
+</body>
+</html>
