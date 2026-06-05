@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Compresión de Matriz - Paso a Paso</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
+
+  nav { display: flex; justify-content: space-between; align-items: center;
+        background: #1e293b; padding: 14px 30px; position: sticky; top: 0; z-index: 100; }
+  nav h1 { font-size: 1.1rem; color: #f59e0b; }
+  nav .btns { display: flex; gap: 10px; }
+  nav button { background: #334155; border: none; color: #e2e8f0; padding: 6px 16px;
+               border-radius: 6px; cursor: pointer; font-size: .9rem; transition: background .2s; }
+  nav button:hover  { background: #f59e0b; color: #0f172a; }
+  nav button.active { background: #f59e0b; color: #0f172a; font-weight: bold; }
+
+  .slide { display: none; min-height: 100vh; padding: 50px 40px; max-width: 1000px; margin: auto; }
+  .slide.active { display: flex; flex-direction: column; gap: 28px; }
+
+  h2 { font-size: 2rem; color: #f59e0b; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+  h3 { font-size: 1.3rem; color: #fcd34d; margin-bottom: 6px; }
+  p, li { font-size: 1.05rem; line-height: 1.7; color: #cbd5e1; }
+  ul { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+
+  pre { background: #1e293b; border-left: 4px solid #f59e0b; padding: 16px 20px;
+        border-radius: 8px; font-size: .93rem; line-height: 1.9; overflow-x: auto; }
+  .kw { color: #f472b6; } .fn { color: #f59e0b; } .st { color: #a3e635; }
+  .cm { color: #64748b; } .nu { color: #60a5fa; }
+
+  /* MATRIX STRIP */
+  .strip { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .token { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .tok-val { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
+             font-size: 1.4rem; font-weight: bold; border-radius: 8px; border: 2px solid #334155; }
+  .tok-val.v1 { background: #1e3a5f; border-color: #60a5fa; color: #93c5fd; }
+  .tok-val.v2 { background: #3b1f2b; border-color: #f472b6; color: #fda4af; }
+  .tok-val.v3 { background: #2d2b10; border-color: #fbbf24; color: #fde68a; }
+  .tok-val.cur { outline: 3px solid #f59e0b; outline-offset: 3px; }
+  .tok-label { font-size: .75rem; color: #94a3b8; }
+
+  /* RESULT TUPLES */
+  .tuples { display: flex; flex-wrap: wrap; gap: 12px; }
+  .tuple { background: #1e293b; border: 2px solid #f59e0b; border-radius: 10px;
+           padding: 12px 18px; text-align: center; min-width: 90px; }
+  .tuple .tv { font-size: 1.4rem; font-weight: bold; color: #fcd34d; }
+  .tuple .tc { font-size: .85rem; color: #94a3b8; margin-top: 4px; }
+  .tuple.done { background: #422006; border-color: #fb923c; }
+  .tuple.done .tv { color: #fb923c; }
+
+  /* VARS */
+  .vars { display: flex; gap: 16px; flex-wrap: wrap; }
+  .var-box { background: #1e293b; border-radius: 8px; padding: 10px 16px;
+             border: 2px solid #334155; min-width: 110px; text-align: center; }
+  .var-box .vname { font-size: .8rem; color: #94a3b8; margin-bottom: 4px; }
+  .var-box .vval { font-size: 1.4rem; font-weight: bold; color: #f59e0b; }
+  .var-box.changed { border-color: #f59e0b; background: #422006; }
+
+  /* CARDS */
+  .cards { display: flex; flex-wrap: wrap; gap: 16px; }
+  .card { flex: 1; min-width: 200px; background: #1e293b; border-radius: 10px;
+          padding: 16px; border-top: 3px solid #f59e0b; }
+  .card h4 { color: #fcd34d; margin-bottom: 8px; font-size: 1rem; }
+  .card p  { font-size: .9rem; }
+
+  .step { display: flex; gap: 14px; align-items: flex-start; background: #1e293b;
+          border-radius: 10px; padding: 14px 18px; border-left: 4px solid #f59e0b; }
+  .step-num { background: #f59e0b; color: #0f172a; font-weight: bold; font-size: 1rem;
+              min-width: 30px; height: 30px; border-radius: 50%; display: flex;
+              align-items: center; justify-content: center; flex-shrink: 0; }
+
+  .badge { display: inline-block; border-radius: 20px; padding: 3px 12px;
+           font-size: .82rem; font-weight: bold; }
+  .badge.amber { background: #422006; color: #fcd34d; }
+
+  /* ANIMATED TRACE */
+  #traceTable { width: 100%; border-collapse: collapse; font-size: .93rem; margin-top: 8px; }
+  #traceTable th { background: #422006; color: #fcd34d; padding: 10px; text-align: center; }
+  #traceTable td { background: #1e293b; padding: 9px 12px; text-align: center;
+                   border-bottom: 1px solid #334155; }
+  #traceTable tr.highlight td { background: #2d2410; color: #fcd34d; font-weight: bold; }
+</style>
+</head>
+<body>
+<nav>
+  <h1>🗜️ Compresión de Matriz</h1>
+  <div class="btns" id="navBtns"></div>
+</nav>
+
+<!-- SLIDE 1 -->
+<div class="slide active" id="slide-1">
+  <h2>¿Qué hace este programa?</h2>
+  <div class="cards">
+    <div class="card">
+      <h4>🎯 Objetivo</h4>
+      <p>Leer la matriz fila por fila y contar cuántas veces se repite cada valor <strong>consecutivamente</strong>. Resultado: lista de tuplas <code>(valor, veces)</code>.</p>
+    </div>
+    <div class="card">
+      <h4>📥 Entrada</h4>
+      <p>Una <strong>matriz de números</strong> (lista de listas).</p>
+    </div>
+    <div class="card">
+      <h4>📤 Salida</h4>
+      <p>Lista de tuplas: <code>[(val, repeticiones), ...]</code></p>
+    </div>
+  </div>
+
+  <h3>Ejemplo del enunciado</h3>
+  <div class="strip">
+    <div class="token"><div class="tok-val v1">1</div><div class="tok-label">fila 0</div></div>
+    <div class="token"><div class="tok-val v1">1</div><div class="tok-label">fila 0</div></div>
+    <div class="token"><div class="tok-val v1">1</div><div class="tok-label">fila 0</div></div>
+    <div class="token"><div class="tok-val v2">2</div><div class="tok-label">fila 1</div></div>
+    <div class="token"><div class="tok-val v2">2</div><div class="tok-label">fila 1</div></div>
+    <div class="token"><div class="tok-val v3">3</div><div class="tok-label">fila 1</div></div>
+    <div style="font-size:2rem;color:#f59e0b;align-self:center;">→</div>
+  </div>
+  <div class="tuples">
+    <div class="tuple done"><div class="tv">1</div><div class="tc">× 3 veces</div></div>
+    <div class="tuple done"><div class="tv">2</div><div class="tc">× 2 veces</div></div>
+    <div class="tuple done"><div class="tv">3</div><div class="tc">× 1 vez</div></div>
+  </div>
+  <p>Resultado final: <code>[(1, 3), (2, 2), (3, 1)]</code></p>
+</div>
+
+<!-- SLIDE 2 -->
+<div class="slide" id="slide-2">
+  <h2>Variables Clave</h2>
+  <div class="cards">
+    <div class="card">
+      <h4><code style="color:#fb923c">m</code></h4>
+      <p>La matriz completa. Se recorre fila por fila.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">r</code></h4>
+      <p>La lista de resultado donde se guardan las tuplas <code>(valor, cuenta)</code>.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">act</code></h4>
+      <p>El valor <strong>actual</strong> que estamos contando. Empieza en <code>None</code>.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">cnt</code></h4>
+      <p>El <strong>contador</strong> de cuántas veces se repite <code>act</code> de forma consecutiva.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">x</code></h4>
+      <p>El número actual que se está analizando en cada iteración del bucle.</p>
+    </div>
+  </div>
+
+  <h3>Lógica principal</h3>
+  <div class="step">
+    <div class="step-num">A</div>
+    <div>Si <code>act</code> es <code>None</code> (primera vez): guardar <code>x</code> en <code>act</code> y poner <code>cnt = 1</code>.</div>
+  </div>
+  <div class="step">
+    <div class="step-num">B</div>
+    <div>Si <code>x == act</code>: el mismo valor se repite → solo incrementamos <code>cnt += 1</code>.</div>
+  </div>
+  <div class="step">
+    <div class="step-num">C</div>
+    <div>Si <code>x != act</code>: cambió el valor → guardar <code>(act, cnt)</code> en resultado y empezar de nuevo con <code>act = x, cnt = 1</code>.</div>
+  </div>
+  <div class="step">
+    <div class="step-num">D</div>
+    <div>Al finalizar el bucle: siempre guardar el último grupo pendiente.</div>
+  </div>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide" id="slide-3">
+  <h2>El Código Completo</h2>
+  <pre><code><span class="kw">def</span> <span class="fn">comprimir_matriz</span>(m):
+    <span class="cm"># r: lista de resultado | act: valor actual | cnt: contador</span>
+    r, act, cnt = [], <span class="st">None</span>, <span class="nu">0</span>
+
+    <span class="kw">for</span> fila <span class="kw">in</span> m:          <span class="cm"># recorrer cada fila</span>
+        <span class="kw">for</span> x <span class="kw">in</span> fila:       <span class="cm"># recorrer cada número de la fila</span>
+
+            <span class="kw">if</span> act <span class="kw">is</span> <span class="st">None</span>:  <span class="cm"># primer elemento</span>
+                act, cnt = x, <span class="nu">1</span>
+
+            <span class="kw">elif</span> x == act:   <span class="cm"># mismo valor: sumar al contador</span>
+                cnt += <span class="nu">1</span>
+
+            <span class="kw">else</span>:            <span class="cm"># nuevo valor: guardar grupo anterior</span>
+                r.<span class="fn">append</span>((act, cnt))
+                act, cnt = x, <span class="nu">1</span>  <span class="cm"># reiniciar con nuevo valor</span>
+
+    <span class="cm"># guardar el último grupo (queda pendiente al salir del bucle)</span>
+    <span class="kw">if</span> act <span class="kw">is not</span> <span class="st">None</span>:
+        r.<span class="fn">append</span>((act, cnt))
+
+    <span class="kw">return</span> r
+</code></pre>
+</div>
+
+<!-- SLIDE 4 -->
+<div class="slide" id="slide-4">
+  <h2>Traza Interactiva</h2>
+  <p>Entrada: <code>[[1,1,1],[2,2,3]]</code>. Pulsa el botón para avanzar paso a paso.</p>
+
+  <div class="vars">
+    <div class="var-box" id="vAct"><div class="vname">act</div><div class="vval" id="vActVal">None</div></div>
+    <div class="var-box" id="vCnt"><div class="vname">cnt</div><div class="vval" id="vCntVal">0</div></div>
+    <div class="var-box" id="vX"><div class="vname">x (actual)</div><div class="vval" id="vXVal">—</div></div>
+  </div>
+
+  <div class="strip" id="stripVis"></div>
+
+  <div id="stepDesc" class="step" style="margin-top: 8px;">
+    <div class="step-num">→</div>
+    <div>Pulsa "Siguiente" para comenzar.</div>
+  </div>
+
+  <div style="display:flex; gap:12px; margin-top:4px;">
+    <button id="btnNext" style="background:#f59e0b;color:#0f172a;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:1rem;">▶ Siguiente</button>
+    <button id="btnReset" style="background:#334155;color:#e2e8f0;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:1rem;">↩ Reiniciar</button>
+  </div>
+
+  <h3 style="margin-top:8px">Resultado acumulado</h3>
+  <div class="tuples" id="resultVis"></div>
+
+<script>
+  const secuencia = [1,1,1,2,2,3];
+  const filas = [[1,1,1],[2,2,3]];
+  const pasos = [
+    { x:1, act:1, cnt:1, r:[], desc:"Primer elemento x=1 → act=1, cnt=1", idx:0 },
+    { x:1, act:1, cnt:2, r:[], desc:"x=1 == act=1 → cnt++ = 2", idx:1 },
+    { x:1, act:1, cnt:3, r:[], desc:"x=1 == act=1 → cnt++ = 3", idx:2 },
+    { x:2, act:2, cnt:1, r:[[1,3]], desc:"x=2 ≠ act=1 → guardamos (1,3), act=2, cnt=1", idx:3 },
+    { x:2, act:2, cnt:2, r:[[1,3]], desc:"x=2 == act=2 → cnt++ = 2", idx:4 },
+    { x:3, act:3, cnt:1, r:[[1,3],[2,2]], desc:"x=3 ≠ act=2 → guardamos (2,2), act=3, cnt=1", idx:5 },
+    { x:null, act:3, cnt:1, r:[[1,3],[2,2],[3,1]], desc:"Fin del bucle → guardamos último grupo (3,1). ¡Listo! ✅", idx:-1 },
+  ];
+
+  const colors = {1:'v1',2:'v2',3:'v3'};
+  let step = -1;
+
+  function buildStrip() {
+    const sv = document.getElementById('stripVis');
+    sv.innerHTML = '';
+    secuencia.forEach((v, i) => {
+      const t = document.createElement('div');
+      t.className = 'token';
+      t.id = `tok-${i}`;
+      t.innerHTML = `<div class="tok-val ${colors[v]}" id="tokv-${i}">${v}</div><div class="tok-label">[${i<3?'0':'1'}][${i<3?i:i-3}]</div>`;
+      sv.appendChild(t);
+    });
+  }
+
+  function render() {
+    if (step < 0 || step >= pasos.length) return;
+    const p = pasos[step];
+
+    document.getElementById('vActVal').textContent = p.act ?? 'None';
+    document.getElementById('vCntVal').textContent = p.cnt;
+    document.getElementById('vXVal').textContent   = p.x ?? '—';
+
+    document.querySelectorAll('.tok-val').forEach(el => el.classList.remove('cur'));
+    if (p.idx >= 0) document.getElementById(`tokv-${p.idx}`)?.classList.add('cur');
+
+    document.getElementById('stepDesc').innerHTML = `<div class="step-num">${step+1}</div><div>${p.desc}</div>`;
+
+    const rv = document.getElementById('resultVis');
+    rv.innerHTML = '';
+    p.r.forEach(([v,c]) => {
+      rv.innerHTML += `<div class="tuple done"><div class="tv">${v}</div><div class="tc">× ${c} veces</div></div>`;
+    });
+
+    if (step === pasos.length - 1) {
+      p.r.forEach(([v,c]) => {}); // already rendered
+      document.getElementById('btnNext').textContent = '✅ Fin';
+      document.getElementById('btnNext').disabled = true;
+    }
+  }
+
+  buildStrip();
+
+  document.getElementById('btnNext').addEventListener('click', () => {
+    if (step < pasos.length - 1) { step++; render(); }
+  });
+  document.getElementById('btnReset').addEventListener('click', () => {
+    step = -1;
+    document.getElementById('vActVal').textContent = 'None';
+    document.getElementById('vCntVal').textContent = '0';
+    document.getElementById('vXVal').textContent = '—';
+    document.querySelectorAll('.tok-val').forEach(el => el.classList.remove('cur'));
+    document.getElementById('stepDesc').innerHTML = `<div class="step-num">→</div><div>Pulsa "Siguiente" para comenzar.</div>`;
+    document.getElementById('resultVis').innerHTML = '';
+    document.getElementById('btnNext').textContent = '▶ Siguiente';
+    document.getElementById('btnNext').disabled = false;
+  });
+</script>
+</div>
+
+<!-- SLIDE 5 -->
+<div class="slide" id="slide-5">
+  <h2>Resumen Visual</h2>
+  <h3>¿Por qué guardar al final del bucle?</h3>
+  <p>Cuando termina el bucle, el último grupo nunca se guardó porque no hubo un elemento diferente que lo "disparara". Por eso hay un <code>if act is not None: r.append((act, cnt))</code> al final.</p>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:4px;">
+    <div class="card" style="border-top-color:#f59e0b">
+      <h4>Ejemplo sin guardar al final ❌</h4>
+      <p>Entrada <code>[1,1,1]</code>: el bucle termina con <code>act=1, cnt=3</code> pero <strong>nunca hay un valor diferente</strong> que dispare el <code>append</code>.</p>
+      <p style="margin-top:8px">Resultado incorrecto: <code>[]</code></p>
+    </div>
+    <div class="card" style="border-top-color:#a3e635">
+      <h4>Con la línea extra ✅</h4>
+      <p>Al salir del bucle, hacemos <code>r.append((1, 3))</code> manualmente.</p>
+      <p style="margin-top:8px">Resultado correcto: <code>[(1, 3)]</code></p>
+    </div>
+  </div>
+
+  <h3>Tabla de casos de prueba</h3>
+  <table>
+    <tr><th>Entrada</th><th>Lectura plana</th><th>Salida</th></tr>
+    <tr><td>[[1,1,1],[2,2,3]]</td><td>1,1,1,2,2,3</td><td>[(1,3),(2,2),(3,1)]</td></tr>
+    <tr><td>[[1,1],[1,1]]</td><td>1,1,1,1</td><td>[(1,4)]</td></tr>
+    <tr><td>[[1,2,1]]</td><td>1,2,1</td><td>[(1,1),(2,1),(1,1)]</td></tr>
+    <tr><td>[]</td><td>—</td><td>[]</td></tr>
+  </table>
+</div>
+
+<script>
+  const totalSlides = 5;
+  const navBtns = document.getElementById('navBtns');
+  let current = 1;
+  function goTo(n) {
+    document.getElementById(`slide-${current}`).classList.remove('active');
+    current = n;
+    document.getElementById(`slide-${current}`).classList.add('active');
+    document.querySelectorAll('#navBtns button').forEach((b, i) => b.classList.toggle('active', i+1===current));
+  }
+  for (let i = 1; i <= totalSlides; i++) {
+    const b = document.createElement('button');
+    b.textContent = i;
+    b.addEventListener('click', () => goTo(i));
+    navBtns.appendChild(b);
+  }
+  navBtns.children[0].classList.add('active');
+  document.addEventListener('keydown', e => {
+    if (e.key==='ArrowRight' && current<totalSlides) goTo(current+1);
+    if (e.key==='ArrowLeft'  && current>1)          goTo(current-1);
+  });
+</script>
+</body>
+</html>

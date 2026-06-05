@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Flood Fill - Paso a Paso</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
+
+  nav { display: flex; justify-content: space-between; align-items: center;
+        background: #1e293b; padding: 14px 30px; position: sticky; top: 0; z-index: 100; }
+  nav h1 { font-size: 1.1rem; color: #34d399; }
+  nav .btns { display: flex; gap: 10px; }
+  nav button { background: #334155; border: none; color: #e2e8f0; padding: 6px 16px;
+               border-radius: 6px; cursor: pointer; font-size: .9rem; transition: background .2s; }
+  nav button:hover  { background: #34d399; color: #0f172a; }
+  nav button.active { background: #34d399; color: #0f172a; font-weight: bold; }
+
+  .slide { display: none; min-height: 100vh; padding: 50px 40px; max-width: 1000px; margin: auto; }
+  .slide.active { display: flex; flex-direction: column; gap: 28px; }
+
+  h2 { font-size: 2rem; color: #34d399; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+  h3 { font-size: 1.3rem; color: #6ee7b7; margin-bottom: 6px; }
+  p, li { font-size: 1.05rem; line-height: 1.7; color: #cbd5e1; }
+  ul { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+
+  pre { background: #1e293b; border-left: 4px solid #34d399; padding: 16px 20px;
+        border-radius: 8px; font-size: .93rem; line-height: 1.8; overflow-x: auto; }
+  .kw { color: #f472b6; } .fn { color: #34d399; } .st { color: #a3e635; }
+  .cm { color: #64748b; } .nu { color: #fb923c; }
+
+  /* GRID FLOOD FILL */
+  .grid-scene { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+  .grid { display: inline-grid; gap: 6px; }
+  .cell { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+          font-size: 1.4rem; font-weight: bold; border-radius: 8px;
+          transition: all .5s; border: 2px solid #334155; }
+  .c1  { background: #1e3a5f; border-color: #60a5fa; color: #93c5fd; }   /* valor 1 */
+  .c2  { background: #3b1f2b; border-color: #f472b6; color: #fda4af; }   /* valor 2 */
+  .c9  { background: #065f46; border-color: #34d399; color: #a7f3d0; }   /* valor 9 relleno */
+  .cstart { background: #7c3aed; border-color: #c4b5fd; color: #f3f0ff; } /* inicio */
+
+  /* PILA */
+  .pila-wrap { display: flex; gap: 20px; flex-wrap: wrap; }
+  .pila { min-width: 130px; background: #1e293b; border-radius: 10px;
+          padding: 12px; border: 2px solid #334155; }
+  .pila h4 { color: #6ee7b7; font-size: .85rem; margin-bottom: 8px; text-align: center; }
+  .pila-item { background: #065f46; border-radius: 6px; padding: 5px 10px;
+               font-size: .85rem; text-align: center; margin-bottom: 6px;
+               border: 1px solid #34d399; color: #a7f3d0; }
+  .pila-item.pop { background: #7f1d1d; border-color: #fca5a5; color: #fecaca; }
+
+  /* CARDS */
+  .cards { display: flex; flex-wrap: wrap; gap: 16px; }
+  .card { flex: 1; min-width: 200px; background: #1e293b; border-radius: 10px;
+          padding: 16px; border-top: 3px solid #34d399; }
+  .card h4 { color: #6ee7b7; margin-bottom: 8px; font-size: 1rem; }
+  .card p  { font-size: .9rem; }
+
+  .badge { display: inline-block; border-radius: 20px; padding: 3px 12px;
+           font-size: .82rem; font-weight: bold; }
+  .badge.green { background: #065f46; color: #a7f3d0; }
+  .badge.red   { background: #7f1d1d; color: #fecaca; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th { background: #065f46; color: #a7f3d0; padding: 10px; text-align: center; }
+  td { background: #1e293b; padding: 9px 12px; text-align: center;
+       border-bottom: 1px solid #334155; }
+  tr:hover td { background: #263145; }
+
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; background: #1e293b;
+          border-radius: 10px; padding: 14px 18px; border-left: 4px solid #34d399; }
+  .step-num { background: #34d399; color: #0f172a; font-weight: bold; font-size: 1rem;
+              min-width: 30px; height: 30px; border-radius: 50%; display: flex;
+              align-items: center; justify-content: center; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<nav>
+  <h1>🎨 Flood Fill</h1>
+  <div class="btns" id="navBtns"></div>
+</nav>
+
+<!-- SLIDE 1 -->
+<div class="slide active" id="slide-1">
+  <h2>¿Qué hace el Flood Fill?</h2>
+  <div class="cards">
+    <div class="card">
+      <h4>🎯 Objetivo</h4>
+      <p>Igual que el bote de pintura en Paint: rellena con un nuevo valor todo el área conectada que comparte el mismo valor inicial.</p>
+    </div>
+    <div class="card">
+      <h4>📥 Entrada</h4>
+      <p>Una <strong>matriz</strong>, una posición de inicio <strong>(fila, columna)</strong> y el <strong>nuevo valor</strong> a usar.</p>
+    </div>
+    <div class="card">
+      <h4>📤 Salida</h4>
+      <p>Una <strong>nueva matriz</strong> con el área conectada rellenada con el nuevo valor.</p>
+    </div>
+    <div class="card">
+      <h4>↔️ Conexión</h4>
+      <p>Solo se consideran vecinos en <strong>4 direcciones</strong>: arriba, abajo, izquierda, derecha (sin diagonales).</p>
+    </div>
+  </div>
+
+  <h3>Ejemplo visual</h3>
+  <div class="grid-scene">
+    <div>
+      <p style="color:#94a3b8;font-size:.9rem;margin-bottom:8px">🖼 Antes — Inicio en (0,0), reemplazar por <strong style="color:#34d399">9</strong></p>
+      <div class="grid" style="grid-template-columns: repeat(3, 56px);">
+        <div class="cell cstart">1</div><div class="cell c1">1</div><div class="cell c1">1</div>
+        <div class="cell c1">1</div><div class="cell c2">2</div><div class="cell c2">2</div>
+        <div class="cell c1">1</div><div class="cell c1">1</div><div class="cell c2">2</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;font-size:2rem;">→</div>
+    <div>
+      <p style="color:#94a3b8;font-size:.9rem;margin-bottom:8px">✅ Después</p>
+      <div class="grid" style="grid-template-columns: repeat(3, 56px);">
+        <div class="cell c9">9</div><div class="cell c9">9</div><div class="cell c9">9</div>
+        <div class="cell c9">9</div><div class="cell c2">2</div><div class="cell c2">2</div>
+        <div class="cell c9">9</div><div class="cell c9">9</div><div class="cell c2">2</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2 -->
+<div class="slide" id="slide-2">
+  <h2>Variables Clave</h2>
+  <div class="cards">
+    <div class="card">
+      <h4><code style="color:#fb923c">matriz</code></h4>
+      <p>La cuadrícula original de valores a rellenar.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">fila_inicial, columna_inicial</code></h4>
+      <p>Posición desde donde empieza el relleno (el "clic" en Paint).</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">nuevo_valor</code></h4>
+      <p>El color o número con que se va a rellenar.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">valor_inicial</code></h4>
+      <p>El valor que tenía la celda de inicio. Solo se reemplazan celdas con este valor.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">matriz_resultado</code></h4>
+      <p>Copia de la matriz. Se modifica esta, no la original.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">pendientes</code></h4>
+      <p>Lista tipo <strong>pila</strong> que guarda las celdas que aún hay que revisar y rellenar.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">fila_actual, columna_actual</code></h4>
+      <p>Celda que se está procesando en cada iteración del bucle.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide" id="slide-3">
+  <h2>El Código Completo</h2>
+  <pre><code><span class="kw">def</span> <span class="fn">flood_fill_facil</span>(matriz, fila_inicial, columna_inicial, nuevo_valor):
+
+    <span class="kw">if not</span> matriz: <span class="kw">return</span> []
+
+    filas   = <span class="fn">len</span>(matriz)       <span class="cm"># cuántas filas tiene la matriz</span>
+    columnas = <span class="fn">len</span>(matriz[<span class="nu">0</span>])  <span class="cm"># cuántas columnas tiene</span>
+
+    <span class="cm"># Fuera de límites: devolver copia sin cambios</span>
+    <span class="kw">if</span> fila_inicial &lt; <span class="nu">0</span> <span class="kw">or</span> fila_inicial &gt;= filas <span class="kw">or</span> ...:
+        <span class="kw">return</span> [fila[:] <span class="kw">for</span> fila <span class="kw">in</span> matriz]
+
+    valor_inicial = matriz[fila_inicial][columna_inicial]
+
+    <span class="cm"># Si ya tiene el nuevo valor, nada que hacer</span>
+    <span class="kw">if</span> valor_inicial == nuevo_valor:
+        <span class="kw">return</span> [fila[:] <span class="kw">for</span> fila <span class="kw">in</span> matriz]
+
+    matriz_resultado = [fila[:] <span class="kw">for</span> fila <span class="kw">in</span> matriz]  <span class="cm"># copia</span>
+    pendientes = [(fila_inicial, columna_inicial)]      <span class="cm"># pila inicial</span>
+
+    <span class="kw">while</span> pendientes:
+        fila_actual, columna_actual = pendientes.pop()  <span class="cm"># saca última</span>
+
+        <span class="cm"># Ignorar si está fuera o ya fue cambiada</span>
+        <span class="kw">if</span> fila_actual &lt; <span class="nu">0</span> <span class="kw">or</span> fila_actual &gt;= filas: <span class="kw">continue</span>
+        <span class="kw">if</span> columna_actual &lt; <span class="nu">0</span> <span class="kw">or</span> columna_actual &gt;= columnas: <span class="kw">continue</span>
+        <span class="kw">if</span> matriz_resultado[fila_actual][columna_actual] != valor_inicial: <span class="kw">continue</span>
+
+        matriz_resultado[fila_actual][columna_actual] = nuevo_valor  <span class="cm"># rellenar</span>
+
+        pendientes.append((fila_actual - <span class="nu">1</span>, columna_actual))  <span class="cm"># arriba</span>
+        pendientes.append((fila_actual + <span class="nu">1</span>, columna_actual))  <span class="cm"># abajo</span>
+        pendientes.append((fila_actual, columna_actual - <span class="nu">1</span>))  <span class="cm"># izquierda</span>
+        pendientes.append((fila_actual, columna_actual + <span class="nu">1</span>))  <span class="cm"># derecha</span>
+
+    <span class="kw">return</span> matriz_resultado
+</code></pre>
+</div>
+
+<!-- SLIDE 4 -->
+<div class="slide" id="slide-4">
+  <h2>Cómo Funciona la Pila</h2>
+  <p>La pila (<code>pendientes</code>) guarda coordenadas. El bucle saca una celda, la rellena y agrega sus vecinos. Se repite hasta que la pila esté vacía.</p>
+
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-text">
+      Empieza: <code>pendientes = [(0,0)]</code>. La matriz no ha cambiado aún.
+    </div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">
+      Saca <code>(0,0)</code>. El valor es <strong>1</strong> = valor_inicial → lo cambia a <strong>9</strong>. Agrega <code>(-1,0) (1,0) (0,-1) (0,1)</code>.
+    </div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">
+      Saca <code>(0,1)</code>. Valor <strong>1</strong> → cambia a <strong>9</strong>. Agrega vecinos.
+    </div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">
+      Si una celda está fuera de límites <strong>o</strong> tiene valor ≠ 1 (ej: celda con <strong>2</strong>) → se ignora con <code>continue</code>.
+    </div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-text">
+      El bucle termina cuando la pila queda vacía. Devuelve <code>matriz_resultado</code>.
+    </div></div>
+  </div>
+</div>
+
+<!-- SLIDE 5 -->
+<div class="slide" id="slide-5">
+  <h2>Traza de la Pila (animada)</h2>
+  <p>Estado de la pila en cada paso clave para el ejemplo <code>[[1,1,1],[1,2,2],[1,1,2]]</code> desde <code>(0,0)</code> reemplazando a <strong>9</strong>.</p>
+
+  <div id="traceArea"></div>
+  <button id="nextStep" style="margin-top:16px; background:#34d399; color:#0f172a;
+          border:none; padding:10px 24px; border-radius:8px; cursor:pointer; font-size:1rem;">
+    ▶ Siguiente paso
+  </button>
+
+  <div class="grid-scene" style="margin-top:24px">
+    <div>
+      <p style="color:#94a3b8;font-size:.9rem;margin-bottom:8px">Estado actual de la matriz</p>
+      <div class="grid" id="matrizVis" style="grid-template-columns: repeat(3, 56px);"></div>
+    </div>
+  </div>
+
+<script>
+  const pasos = [
+    { pila: ["(0,0)"], matriz: [[1,1,1],[1,2,2],[1,1,2]], desc: "Estado inicial. Pila tiene solo (0,0)." },
+    { pila: ["(-1,0)","(1,0)","(0,-1)","(0,1)"], matriz: [[9,1,1],[1,2,2],[1,1,2]], desc: "Sacamos (0,0) → vale 1 → lo ponemos 9. Agregamos sus 4 vecinos." },
+    { pila: ["(-1,0)","(1,0)","(0,-1)","(0,2)","(0,0)","(-1,1)","(1,1)"], matriz: [[9,9,1],[1,2,2],[1,1,2]], desc: "Sacamos (0,1) → vale 1 → ponemos 9. Seguimos expandiendo." },
+    { pila: [], matriz: [[9,9,9],[9,2,2],[9,9,2]], desc: "Pila vacía. Todas las celdas con 1 conectadas fueron rellenadas. ✅" },
+  ];
+
+  let step = 0;
+  const colors = { 1: 'c1', 2: 'c2', 9: 'c9' };
+
+  function render() {
+    const p = pasos[step];
+    const ta = document.getElementById('traceArea');
+    ta.innerHTML = `<div class="step"><div class="step-num">${step + 1}</div><div class="step-text">${p.desc}<br><strong>Pila:</strong> ${p.pila.length ? p.pila.join(', ') : '(vacía)'}</div></div>`;
+    const mv = document.getElementById('matrizVis');
+    mv.innerHTML = '';
+    p.matriz.flat().forEach(v => {
+      const d = document.createElement('div');
+      d.className = `cell ${colors[v] || 'c1'}`;
+      d.textContent = v;
+      mv.appendChild(d);
+    });
+  }
+
+  document.getElementById('nextStep').addEventListener('click', () => {
+    if (step < pasos.length - 1) step++;
+    render();
+    if (step === pasos.length - 1) document.getElementById('nextStep').textContent = '✅ Fin';
+  });
+
+  render();
+</script>
+</div>
+
+<script>
+  const totalSlides = 5;
+  const navBtns = document.getElementById('navBtns');
+  let current = 1;
+  function goTo(n) {
+    document.getElementById(`slide-${current}`).classList.remove('active');
+    current = n;
+    document.getElementById(`slide-${current}`).classList.add('active');
+    document.querySelectorAll('#navBtns button').forEach((b, i) => b.classList.toggle('active', i+1===current));
+  }
+  for (let i = 1; i <= totalSlides; i++) {
+    const b = document.createElement('button');
+    b.textContent = i;
+    b.addEventListener('click', () => goTo(i));
+    navBtns.appendChild(b);
+  }
+  navBtns.children[0].classList.add('active');
+  document.addEventListener('keydown', e => {
+    if (e.key==='ArrowRight' && current<totalSlides) goTo(current+1);
+    if (e.key==='ArrowLeft'  && current>1)          goTo(current-1);
+  });
+</script>
+</body>
+</html>

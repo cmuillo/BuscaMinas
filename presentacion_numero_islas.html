@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Conteo de Islas - Paso a Paso</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0c1a2e; color: #e2e8f0; }
+
+  nav { display: flex; justify-content: space-between; align-items: center;
+        background: #0f2d4a; padding: 14px 30px; position: sticky; top: 0; z-index: 100;
+        border-bottom: 2px solid #0ea5e9; }
+  nav h1 { font-size: 1.1rem; color: #38bdf8; }
+  nav .btns { display: flex; gap: 10px; }
+  nav button { background: #1e3a5f; border: none; color: #e2e8f0; padding: 6px 16px;
+               border-radius: 6px; cursor: pointer; font-size: .9rem; transition: background .2s; }
+  nav button:hover  { background: #0ea5e9; color: #0c1a2e; }
+  nav button.active { background: #0ea5e9; color: #0c1a2e; font-weight: bold; }
+
+  .slide { display: none; min-height: 100vh; padding: 50px 40px;
+           max-width: 1050px; margin: auto; }
+  .slide.active { display: flex; flex-direction: column; gap: 28px; }
+
+  h2 { font-size: 2rem; color: #38bdf8; border-bottom: 2px solid #1e3a5f; padding-bottom: 10px; }
+  h3 { font-size: 1.3rem; color: #7dd3fc; margin-bottom: 6px; }
+  p, li { font-size: 1.05rem; line-height: 1.7; color: #cbd5e1; }
+  ul { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+
+  pre { background: #0f2d4a; border-left: 4px solid #38bdf8; padding: 16px 20px;
+        border-radius: 8px; font-size: .93rem; line-height: 1.9; overflow-x: auto; }
+  .kw { color: #f472b6; } .fn { color: #38bdf8; } .st { color: #a3e635; }
+  .cm { color: #475569; } .nu { color: #fb923c; }
+
+  /* GRID */
+  .grid { display: inline-grid; gap: 5px; }
+  .cell {
+    width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: bold; border-radius: 8px;
+    border: 2px solid transparent; transition: all .4s;
+    cursor: default; user-select: none;
+  }
+  .water   { background: #0c2d4a; border-color: #1e3a5f; color: #334155; }
+  .land    { background: #14532d; border-color: #22c55e; color: #86efac; }
+  .isle1   { background: #1e3a5f; border-color: #38bdf8; color: #7dd3fc; }
+  .isle2   { background: #4a1942; border-color: #c026d3; color: #e879f9; }
+  .isle3   { background: #422006; border-color: #f97316; color: #fdba74; }
+  .isle4   { background: #3b1f2b; border-color: #e11d48; color: #fda4af; }
+  .current { outline: 3px solid #facc15; outline-offset: 3px; }
+  .visited { opacity: 0.55; }
+
+  /* ISLAND LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; }
+  .leg-item { display: flex; align-items: center; gap: 8px; }
+  .leg-box { width: 28px; height: 28px; border-radius: 6px; border: 2px solid; }
+
+  /* CARDS */
+  .cards { display: flex; flex-wrap: wrap; gap: 16px; }
+  .card { flex: 1; min-width: 200px; background: #0f2d4a; border-radius: 10px;
+          padding: 16px; border-top: 3px solid #38bdf8; }
+  .card h4 { color: #7dd3fc; margin-bottom: 8px; font-size: 1rem; }
+  .card p  { font-size: .9rem; }
+
+  .step { display: flex; gap: 14px; align-items: flex-start; background: #0f2d4a;
+          border-radius: 10px; padding: 14px 18px; border-left: 4px solid #38bdf8; }
+  .step-num { background: #38bdf8; color: #0c1a2e; font-weight: bold; font-size: 1rem;
+              min-width: 32px; height: 32px; border-radius: 50%; display: flex;
+              align-items: center; justify-content: center; flex-shrink: 0; }
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+
+  .badge { display: inline-block; border-radius: 20px; padding: 3px 12px;
+           font-size: .82rem; font-weight: bold; }
+  .b-blue  { background: #1e3a5f; color: #7dd3fc; }
+  .b-green { background: #14532d; color: #86efac; }
+  .b-gray  { background: #1e293b; color: #94a3b8; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+  th { background: #1e3a5f; color: #7dd3fc; padding: 10px; text-align: center; }
+  td { background: #0f2d4a; padding: 9px 12px; text-align: center;
+       border-bottom: 1px solid #1e3a5f; }
+  tr:hover td { background: #152d47; }
+
+  /* COUNTER */
+  .counter-display { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .island-count { font-size: 4rem; font-weight: bold; color: #38bdf8;
+                  background: #0f2d4a; border: 3px solid #38bdf8; border-radius: 16px;
+                  width: 90px; height: 90px; display: flex; align-items: center;
+                  justify-content: center; transition: all .4s; }
+  .island-count.pop { transform: scale(1.3); color: #facc15; border-color: #facc15; }
+
+  /* VARS BOX */
+  .vars { display: flex; gap: 14px; flex-wrap: wrap; }
+  .var-box { background: #0f2d4a; border-radius: 8px; padding: 10px 16px;
+             border: 2px solid #1e3a5f; min-width: 130px; text-align: center; }
+  .var-box .vname { font-size: .75rem; color: #64748b; margin-bottom: 4px; }
+  .var-box .vval  { font-size: 1.2rem; font-weight: bold; color: #38bdf8; word-break: break-all; }
+  .var-box.active { border-color: #facc15; }
+  .var-box.active .vval { color: #facc15; }
+
+  /* SCENE */
+  .scene { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+</style>
+</head>
+<body>
+<nav>
+  <h1>🏝️ Conteo de Islas</h1>
+  <div class="btns" id="navBtns"></div>
+</nav>
+
+<!-- ============ SLIDE 1 ============ -->
+<div class="slide active" id="slide-1">
+  <h2>¿Cuál es el problema?</h2>
+  <div class="cards">
+    <div class="card">
+      <h4>🗺️ El mapa</h4>
+      <p>Tenemos una cuadrícula donde cada celda puede ser:<br>
+        <strong style="color:#22c55e">1 = tierra</strong><br>
+        <strong style="color:#334155">0 = agua</strong></p>
+    </div>
+    <div class="card">
+      <h4>🏝️ ¿Qué es una isla?</h4>
+      <p>Un grupo de celdas con <strong>1</strong> que están <strong>conectadas entre sí</strong> (arriba, abajo, izquierda, derecha). Las diagonales no cuentan.</p>
+    </div>
+    <div class="card">
+      <h4>🎯 Objetivo</h4>
+      <p>Contar cuántas islas hay en total en la matriz.</p>
+    </div>
+    <div class="card">
+      <h4>📤 Salida</h4>
+      <p>Un <strong>número entero</strong>: la cantidad de islas encontradas.</p>
+    </div>
+  </div>
+
+  <h3>Ejemplo visual</h3>
+  <div class="scene">
+    <div>
+      <p style="color:#64748b;font-size:.88rem;margin-bottom:8px">Matriz de entrada</p>
+      <div class="grid" style="grid-template-columns: repeat(4, 58px);">
+        <div class="cell isle1">1</div><div class="cell isle1">1</div><div class="cell water">0</div><div class="cell water">0</div>
+        <div class="cell isle1">1</div><div class="cell water">0</div><div class="cell water">0</div><div class="cell isle2">1</div>
+        <div class="cell water">0</div><div class="cell water">0</div><div class="cell water">0</div><div class="cell isle2">1</div>
+        <div class="cell water">0</div><div class="cell isle3">1</div><div class="cell isle3">1</div><div class="cell water">0</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:14px;">
+      <div class="legend">
+        <div class="leg-item"><div class="leg-box" style="background:#1e3a5f;border-color:#38bdf8;"></div><span>Isla <strong style="color:#38bdf8">1</strong> (3 celdas)</span></div>
+        <div class="leg-item"><div class="leg-box" style="background:#4a1942;border-color:#c026d3;"></div><span>Isla <strong style="color:#e879f9">2</strong> (2 celdas)</span></div>
+        <div class="leg-item"><div class="leg-box" style="background:#422006;border-color:#f97316;"></div><span>Isla <strong style="color:#fdba74">3</strong> (2 celdas)</span></div>
+        <div class="leg-item"><div class="leg-box" style="background:#0c2d4a;border-color:#1e3a5f;"></div><span>Agua</span></div>
+      </div>
+      <p style="font-size:1.2rem">Resultado: <strong style="color:#facc15;font-size:1.6rem">3 islas</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 2 ============ -->
+<div class="slide" id="slide-2">
+  <h2>Estrategia: Flood Fill por cada Isla</h2>
+  <p>La idea es recorrer la matriz celda por celda. Cuando encontramos un <strong style="color:#22c55e">1 no visitado</strong>, sabemos que es el inicio de una nueva isla. Usamos <strong>Flood Fill</strong> para marcar toda esa isla como visitada y así no contarla de nuevo.</p>
+
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div>
+      Crear una matriz <code>visitado</code> del mismo tamaño, inicializada en <code>False</code>.
+    </div></div>
+    <div class="step"><div class="step-num">2</div><div>
+      Recorrer cada celda <code>(f, c)</code> con dos bucles <code>for</code>.
+    </div></div>
+    <div class="step"><div class="step-num">3</div><div>
+      Si <code>matriz[f][c] == 1</code> y <code>visitado[f][c] == False</code>:<br>
+      → Incrementar <code>contador += 1</code><br>
+      → Llamar a <code>inundar()</code> para marcar toda esa isla como visitada.
+    </div></div>
+    <div class="step"><div class="step-num">4</div><div>
+      La función <code>inundar()</code> es un Flood Fill: usa una pila y recorre todas las celdas conectadas con valor 1, marcándolas en <code>visitado</code>.
+    </div></div>
+    <div class="step"><div class="step-num">5</div><div>
+      Al terminar de recorrer la matriz, devolver <code>contador</code>.
+    </div></div>
+  </div>
+
+  <h3 style="margin-top:4px">¿Por qué necesitamos <code>visitado</code>?</h3>
+  <div class="cards">
+    <div class="card">
+      <h4>❌ Sin <code>visitado</code></h4>
+      <p>Cada celda de una isla se contaría como isla nueva. Una isla de 3 celdas sería contada 3 veces.</p>
+    </div>
+    <div class="card">
+      <h4>✅ Con <code>visitado</code></h4>
+      <p>Al encontrar el primer <code>1</code> de una isla, marcamos <strong>todas sus celdas</strong> de golpe. Las siguientes celdas de esa isla ya estarán marcadas y se ignorarán.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 3 ============ -->
+<div class="slide" id="slide-3">
+  <h2>Variables Clave</h2>
+  <div class="cards">
+    <div class="card">
+      <h4><code style="color:#fb923c">matriz</code></h4>
+      <p>La cuadrícula binaria de entrada. <code>1</code>=tierra, <code>0</code>=agua.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">visitado</code></h4>
+      <p>Matriz del mismo tamaño. Guarda <code>True</code> en cada celda que ya fue procesada.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">contador</code></h4>
+      <p>El número de islas encontradas. Aumenta en 1 cada vez que encontramos un <code>1</code> no visitado.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">f, c</code></h4>
+      <p>Coordenadas de la celda actual en el bucle principal.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">pila</code></h4>
+      <p>Dentro de <code>inundar()</code>: lista de celdas pendientes por marcar. Se expande a los 4 vecinos.</p>
+    </div>
+    <div class="card">
+      <h4><code style="color:#fb923c">filas, columnas</code></h4>
+      <p>Dimensiones de la matriz. Usadas para no salirnos de los límites.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 4 ============ -->
+<div class="slide" id="slide-4">
+  <h2>El Código Completo</h2>
+  <pre><code><span class="kw">def</span> <span class="fn">contar_islas</span>(matriz):
+    <span class="kw">if not</span> matriz <span class="kw">or not</span> matriz[<span class="nu">0</span>]: <span class="kw">return</span> <span class="nu">0</span>
+
+    filas    = <span class="fn">len</span>(matriz)
+    columnas = <span class="fn">len</span>(matriz[<span class="nu">0</span>])
+    visitado = [[<span class="st">False</span>] * columnas <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(filas)]
+    contador = <span class="nu">0</span>
+
+    <span class="kw">for</span> f <span class="kw">in</span> <span class="fn">range</span>(filas):
+        <span class="kw">for</span> c <span class="kw">in</span> <span class="fn">range</span>(columnas):
+            <span class="kw">if</span> matriz[f][c] == <span class="nu">1</span> <span class="kw">and not</span> visitado[f][c]:
+                contador += <span class="nu">1</span>                   <span class="cm"># nueva isla!</span>
+                <span class="fn">inundar</span>(matriz, visitado, f, c, filas, columnas)
+
+    <span class="kw">return</span> contador
+
+
+<span class="kw">def</span> <span class="fn">inundar</span>(matriz, visitado, fila, columna, filas, columnas):
+    pila = [(fila, columna)]  <span class="cm"># empezar desde la celda inicial</span>
+
+    <span class="kw">while</span> pila:
+        f, c = pila.pop()
+
+        <span class="cm"># Ignorar celdas fuera de límites</span>
+        <span class="kw">if</span> f &lt; <span class="nu">0</span> <span class="kw">or</span> f &gt;= filas <span class="kw">or</span> c &lt; <span class="nu">0</span> <span class="kw">or</span> c &gt;= columnas: <span class="kw">continue</span>
+        <span class="cm"># Ignorar agua o ya visitadas</span>
+        <span class="kw">if</span> visitado[f][c] <span class="kw">or</span> matriz[f][c] == <span class="nu">0</span>: <span class="kw">continue</span>
+
+        visitado[f][c] = <span class="st">True</span>  <span class="cm"># marcar como procesada</span>
+
+        pila.append((f - <span class="nu">1</span>, c))  <span class="cm"># arriba</span>
+        pila.append((f + <span class="nu">1</span>, c))  <span class="cm"># abajo</span>
+        pila.append((f, c - <span class="nu">1</span>))  <span class="cm"># izquierda</span>
+        pila.append((f, c + <span class="nu">1</span>))  <span class="cm"># derecha</span>
+</code></pre>
+</div>
+
+<!-- ============ SLIDE 5 ============ -->
+<div class="slide" id="slide-5">
+  <h2>Animación: Recorrido Celda a Celda</h2>
+  <p>Pulsa <strong>Siguiente</strong> para ver cómo el algoritmo descubre cada isla.</p>
+
+  <div class="scene">
+    <div>
+      <p style="color:#64748b;font-size:.85rem;margin-bottom:8px">Matriz (amarillo = celda actual)</p>
+      <div class="grid" id="animGrid" style="grid-template-columns: repeat(4, 58px);"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;justify-content:center;">
+      <div class="vars">
+        <div class="var-box" id="vF"><div class="vname">f (fila)</div><div class="vval" id="vFv">—</div></div>
+        <div class="var-box" id="vC"><div class="vname">c (col)</div><div class="vval" id="vCv">—</div></div>
+        <div class="var-box" id="vCtr"><div class="vname">contador</div><div class="vval" id="vCtrv">0</div></div>
+      </div>
+      <div id="animDesc" class="step">
+        <div class="step-num">→</div>
+        <div>Pulsa Siguiente para empezar.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-top:4px">
+    <button id="btnNext" style="background:#0ea5e9;color:#0c1a2e;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:1rem;">▶ Siguiente</button>
+    <button id="btnReset" style="background:#1e3a5f;color:#e2e8f0;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:1rem;">↩ Reiniciar</button>
+  </div>
+
+<script>
+  const MAT = [
+    [1,1,0,0],
+    [1,0,0,1],
+    [0,0,0,1],
+    [0,1,1,0]
+  ];
+  const COLS = 4, ROWS = 4;
+
+  // Qué isla pertenece cada celda (0=agua, 1/2/3=isla)
+  const ISLANDS = [
+    [1,1,0,0],
+    [1,0,0,2],
+    [0,0,0,2],
+    [0,3,3,0]
+  ];
+
+  const isleClass = ['water','isle1','isle2','isle3','isle4'];
+
+  const pasos = [
+    { f:0, c:0, ctr:1, desc:'(0,0)=1 y no visitado → <strong style="color:#facc15">NUEVA ISLA 1</strong>. Llamamos inundar() desde (0,0).', flood:[[0,0],[0,1],[1,0]] },
+    { f:0, c:1, ctr:1, desc:'(0,1)=1 pero <strong>ya visitado</strong> por inundar(). Lo saltamos.', flood:[] },
+    { f:0, c:2, ctr:1, desc:'(0,2)=0 → agua. Ignorar.', flood:[] },
+    { f:0, c:3, ctr:1, desc:'(0,3)=0 → agua. Ignorar.', flood:[] },
+    { f:1, c:0, ctr:1, desc:'(1,0)=1 pero <strong>ya visitado</strong>. Lo saltamos.', flood:[] },
+    { f:1, c:1, ctr:1, desc:'(1,1)=0 → agua. Ignorar.', flood:[] },
+    { f:1, c:2, ctr:1, desc:'(1,2)=0 → agua. Ignorar.', flood:[] },
+    { f:1, c:3, ctr:2, desc:'(1,3)=1 y no visitado → <strong style="color:#e879f9">NUEVA ISLA 2</strong>. Llamamos inundar() desde (1,3).', flood:[[1,3],[2,3]] },
+    { f:2, c:0, ctr:2, desc:'(2,0)=0 → agua. Ignorar.', flood:[] },
+    { f:2, c:1, ctr:2, desc:'(2,1)=0 → agua. Ignorar.', flood:[] },
+    { f:2, c:2, ctr:2, desc:'(2,2)=0 → agua. Ignorar.', flood:[] },
+    { f:2, c:3, ctr:2, desc:'(2,3)=1 pero <strong>ya visitado</strong>. Lo saltamos.', flood:[] },
+    { f:3, c:0, ctr:2, desc:'(3,0)=0 → agua. Ignorar.', flood:[] },
+    { f:3, c:1, ctr:3, desc:'(3,1)=1 y no visitado → <strong style="color:#fdba74">NUEVA ISLA 3</strong>. Llamamos inundar() desde (3,1).', flood:[[3,1],[3,2]] },
+    { f:3, c:2, ctr:3, desc:'(3,2)=1 pero <strong>ya visitado</strong>. Lo saltamos.', flood:[] },
+    { f:3, c:3, ctr:3, desc:'(3,3)=0 → agua. Ignorar.', flood:[] },
+    { f:-1, c:-1, ctr:3, desc:'✅ Recorrido completo. Total: <strong style="color:#facc15;font-size:1.3rem">3 islas</strong>.', flood:[] },
+  ];
+
+  const visited = Array.from({length:4}, () => Array(4).fill(false));
+  let step = -1;
+
+  function buildGrid(highlightF, highlightC) {
+    const grid = document.getElementById('animGrid');
+    grid.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const d = document.createElement('div');
+        const isle = ISLANDS[r][c];
+        let cls = isleClass[isle];
+        if (visited[r][c] && isle > 0) cls += ' visited';
+        if (r === highlightF && c === highlightC) cls += ' current';
+        d.className = `cell ${cls}`;
+        d.textContent = MAT[r][c];
+        grid.appendChild(d);
+      }
+    }
+  }
+
+  function render() {
+    if (step < 0) { buildGrid(-1,-1); return; }
+    if (step >= pasos.length) return;
+    const p = pasos[step];
+    p.flood.forEach(([r,c]) => visited[r][c] = true);
+    buildGrid(p.f, p.c);
+    document.getElementById('vFv').textContent = p.f >= 0 ? p.f : '—';
+    document.getElementById('vCv').textContent = p.c >= 0 ? p.c : '—';
+    const ctrEl = document.getElementById('vCtrv');
+    ctrEl.textContent = p.ctr;
+    const ctrBox = document.getElementById('vCtr');
+    ctrBox.classList.toggle('active', p.flood.length > 0);
+    document.getElementById('animDesc').innerHTML = `<div class="step-num">${step+1}</div><div>${p.desc}</div>`;
+    if (step === pasos.length - 1) {
+      document.getElementById('btnNext').textContent = '✅ Fin';
+      document.getElementById('btnNext').disabled = true;
+    }
+  }
+
+  buildGrid(-1,-1);
+
+  document.getElementById('btnNext').addEventListener('click', () => {
+    if (step < pasos.length - 1) { step++; render(); }
+  });
+  document.getElementById('btnReset').addEventListener('click', () => {
+    step = -1;
+    for (let r=0;r<4;r++) for(let c=0;c<4;c++) visited[r][c]=false;
+    buildGrid(-1,-1);
+    document.getElementById('vFv').textContent='—';
+    document.getElementById('vCv').textContent='—';
+    document.getElementById('vCtrv').textContent='0';
+    document.getElementById('vCtr').classList.remove('active');
+    document.getElementById('animDesc').innerHTML='<div class="step-num">→</div><div>Pulsa Siguiente para empezar.</div>';
+    document.getElementById('btnNext').textContent='▶ Siguiente';
+    document.getElementById('btnNext').disabled=false;
+  });
+</script>
+</div>
+
+<!-- ============ SLIDE 6 ============ -->
+<div class="slide" id="slide-6">
+  <h2>Casos de Prueba</h2>
+  <div class="scene" style="flex-wrap:wrap;gap:28px">
+
+    <div>
+      <p style="color:#64748b;font-size:.85rem;margin-bottom:8px">Toda tierra → <strong style="color:#facc15">1 isla</strong></p>
+      <div class="grid" style="grid-template-columns: repeat(3, 58px);">
+        <div class="cell isle1">1</div><div class="cell isle1">1</div><div class="cell isle1">1</div>
+        <div class="cell isle1">1</div><div class="cell isle1">1</div><div class="cell isle1">1</div>
+        <div class="cell isle1">1</div><div class="cell isle1">1</div><div class="cell isle1">1</div>
+      </div>
+    </div>
+
+    <div>
+      <p style="color:#64748b;font-size:.85rem;margin-bottom:8px">Toda agua → <strong style="color:#facc15">0 islas</strong></p>
+      <div class="grid" style="grid-template-columns: repeat(3, 58px);">
+        <div class="cell water">0</div><div class="cell water">0</div><div class="cell water">0</div>
+        <div class="cell water">0</div><div class="cell water">0</div><div class="cell water">0</div>
+      </div>
+    </div>
+
+    <div>
+      <p style="color:#64748b;font-size:.85rem;margin-bottom:8px">4 esquinas → <strong style="color:#facc15">4 islas</strong></p>
+      <div class="grid" style="grid-template-columns: repeat(3, 58px);">
+        <div class="cell isle1">1</div><div class="cell water">0</div><div class="cell isle2">1</div>
+        <div class="cell water">0</div><div class="cell water">0</div><div class="cell water">0</div>
+        <div class="cell isle3">1</div><div class="cell water">0</div><div class="cell isle4">1</div>
+      </div>
+    </div>
+  </div>
+
+  <table style="margin-top:8px">
+    <tr><th>Entrada</th><th>Islas</th><th>¿Por qué?</th></tr>
+    <tr><td>Toda tierra</td><td>1</td><td>Todo está conectado → una sola isla gigante</td></tr>
+    <tr><td>Toda agua</td><td>0</td><td>No hay ningún 1 → no hay islas</td></tr>
+    <tr><td>4 esquinas solas</td><td>4</td><td>Cada 1 está aislado, separado por agua</td></tr>
+    <tr><td>Ejemplo principal</td><td>3</td><td>3 grupos desconectados de 1s</td></tr>
+  </table>
+
+  <h3>Conexión con ejercicios anteriores</h3>
+  <div class="cards">
+    <div class="card">
+      <h4>🎨 Flood Fill</h4>
+      <p>La función <code>inundar()</code> ES Flood Fill. Aquí no cambia colores, sino que <strong>marca celdas como visitadas</strong>.</p>
+    </div>
+    <div class="card">
+      <h4>🔍 Sopa de Letras</h4>
+      <p>Ambos recorren la matriz buscando un patrón. Aquí el patrón es "grupos de 1s conectados".</p>
+    </div>
+    <div class="card">
+      <h4>🗜️ Compresión</h4>
+      <p>Ambos usan un <strong>contador</strong> para acumular un resultado al recorrer la estructura de datos.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const totalSlides = 6;
+  const navBtns = document.getElementById('navBtns');
+  let current = 1;
+  function goTo(n) {
+    document.getElementById(`slide-${current}`).classList.remove('active');
+    current = n;
+    document.getElementById(`slide-${current}`).classList.add('active');
+    document.querySelectorAll('#navBtns button').forEach((b,i) => b.classList.toggle('active', i+1===current));
+  }
+  for (let i = 1; i <= totalSlides; i++) {
+    const b = document.createElement('button');
+    b.textContent = i;
+    b.addEventListener('click', () => goTo(i));
+    navBtns.appendChild(b);
+  }
+  navBtns.children[0].classList.add('active');
+  document.addEventListener('keydown', e => {
+    if (e.key==='ArrowRight' && current<totalSlides) goTo(current+1);
+    if (e.key==='ArrowLeft'  && current>1)          goTo(current-1);
+  });
+</script>
+</body>
+</html>
