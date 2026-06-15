@@ -144,7 +144,11 @@ def buscar_membresia(lista, numero):
 def crear_membresia(lista):
     """Solicita datos al usuario y crea una nueva membresía."""
     print("\n-- CREAR NUEVA MEMBRESÍA --")
-    numero = int(input("Número de membresía: "))
+    try:
+        numero = int(input("Número de membresía: "))
+    except ValueError:
+        print("⚠ Debe ingresar un número entero válido.")
+        return
 
     # Verificamos que el número no esté ya en uso
     if buscar_membresia(lista, numero):
@@ -171,7 +175,12 @@ def seleccionar_membresia(lista):
     Pide al usuario un número de membresía y retorna el objeto.
     Si no existe, imprime un aviso y retorna None.
     """
-    numero = int(input("Número de membresía: "))
+    try:
+        numero = int(input("Número de membresía: "))
+    except ValueError:
+        print("⚠ Debe ingresar un número entero válido.")
+        return None
+
     m = buscar_membresia(lista, numero)
     if not m:
         print("⚠ Membresía no encontrada.")
@@ -221,7 +230,11 @@ def main():
             print("\n-- COMPRAR SESIONES --")
             m = seleccionar_membresia(membresias)
             if m:
-                cantidad = int(input("¿Cuántas sesiones desea comprar? "))
+                try:
+                    cantidad = int(input("¿Cuántas sesiones desea comprar? "))
+                except ValueError:
+                    print("⚠ Debe ingresar un número entero válido.")
+                    continue
                 print(m.comprar_sesiones(cantidad))
 
         elif opcion == "4":

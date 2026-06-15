@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Árboles Binarios - Ejercicios de Examen</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
+
+  nav { display: flex; justify-content: space-between; align-items: center;
+        background: #1e293b; padding: 14px 30px; position: sticky; top: 0; z-index: 100;
+        border-bottom: 2px solid #334155; }
+  nav h1 { font-size: 1.1rem; color: #34d399; }
+  nav .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  nav button { background: #334155; border: none; color: #e2e8f0; padding: 6px 14px;
+               border-radius: 6px; cursor: pointer; font-size: .85rem; transition: background .2s; }
+  nav button:hover  { background: #34d399; color: #0f172a; }
+  nav button.active { background: #34d399; color: #0f172a; font-weight: bold; }
+
+  .slide { display: none; min-height: 100vh; padding: 50px 40px; max-width: 1050px; margin: auto; }
+  .slide.active { display: flex; flex-direction: column; gap: 26px; }
+
+  h2 { font-size: 2rem; color: #34d399; border-bottom: 2px solid #334155; padding-bottom: 10px; }
+  h3 { font-size: 1.25rem; color: #6ee7b7; margin-bottom: 6px; }
+  p, li { font-size: 1.05rem; line-height: 1.75; color: #cbd5e1; }
+  ul { padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+
+  pre { background: #1e293b; border-left: 4px solid #34d399; padding: 16px 20px;
+        border-radius: 8px; font-size: .92rem; line-height: 1.85; overflow-x: auto; white-space: pre; }
+  .kw { color: #f472b6; } .fn { color: #34d399; } .st { color: #a3e635; }
+  .cm { color: #64748b; font-style: italic; } .nu { color: #fb923c; }
+
+  /* ÁRBOL SVG */
+  .tree-svg { background: #1e293b; border-radius: 12px; border: 2px solid #334155; padding: 12px; }
+  .tree-svg text { font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+
+  /* CARDS */
+  .cards { display: flex; flex-wrap: wrap; gap: 16px; }
+  .card { flex: 1; min-width: 190px; background: #1e293b; border-radius: 10px;
+          padding: 16px; border-top: 3px solid #34d399; }
+  .card h4 { color: #6ee7b7; margin-bottom: 8px; font-size: 1rem; }
+  .card p  { font-size: .92rem; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; background: #1e293b;
+          border-radius: 10px; padding: 14px 18px; border-left: 4px solid #34d399; }
+  .step-num { background: #34d399; color: #0f172a; font-weight: bold; font-size: 1rem;
+              min-width: 30px; height: 30px; border-radius: 50%; display: flex;
+              align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* RECORRIDO VISUAL */
+  .traversal-box { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  .trav-card { background: #1e293b; border-radius: 10px; padding: 14px 18px;
+               border-left: 4px solid #34d399; flex: 1; min-width: 200px; }
+  .trav-card h4 { color: #6ee7b7; font-size: .95rem; margin-bottom: 8px; }
+  .trav-seq { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .trav-node { background: #065f46; border: 2px solid #34d399; border-radius: 8px;
+               padding: 4px 12px; font-size: .9rem; font-weight: bold; color: #a7f3d0; }
+  .trav-node.root { background: #7c3aed; border-color: #c4b5fd; color: #f3f0ff; }
+  .trav-node.left { background: #1e3a5f; border-color: #60a5fa; color: #93c5fd; }
+  .trav-node.right{ background: #3b1f2b; border-color: #f472b6; color: #fda4af; }
+  .trav-arrow { color: #94a3b8; font-size: 1.1rem; align-self: center; }
+
+  /* BST SEARCH */
+  .search-path { display: flex; flex-direction: column; gap: 10px; }
+  .sp-row { display: flex; gap: 12px; align-items: center; }
+  .sp-node { background: #1e293b; border: 2px solid #334155; border-radius: 8px;
+             padding: 8px 16px; font-weight: bold; font-size: .95rem; }
+  .sp-node.visit { border-color: #34d399; color: #a7f3d0; background: #065f46; }
+  .sp-node.found { border-color: #fbbf24; color: #fde68a; background: #78350f; }
+  .sp-node.miss  { border-color: #f87171; color: #fecaca; background: #7f1d1d; }
+  .sp-msg { font-size: .88rem; color: #94a3b8; }
+
+  .note { background: #1e293b; border-left: 4px solid #f59e0b; border-radius: 8px;
+          padding: 12px 16px; color: #fde68a; font-size: .95rem; }
+  .formula { background: #1e293b; border: 2px solid #34d399; border-radius: 10px;
+             padding: 18px 24px; font-size: 1.05rem; text-align: center; color: #a7f3d0; }
+  .formula strong { color: #f472b6; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th { background: #065f46; color: #a7f3d0; padding: 10px; text-align: center; }
+  td { background: #1e293b; padding: 9px 12px; text-align: center;
+       border-bottom: 1px solid #334155; }
+  tr:hover td { background: #263145; }
+</style>
+</head>
+<body>
+<nav>
+  <h1>🌳 Árboles Binarios — Ejercicios de Examen</h1>
+  <div class="btns" id="navBtns"></div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 1 -->
+<div class="slide active" id="slide-1">
+  <h2>¿Qué es un Árbol Binario?</h2>
+  <div class="cards">
+    <div class="card">
+      <h4>🌳 Definición</h4>
+      <p>Un árbol binario es una estructura donde cada <strong>nodo</strong> tiene <strong>como máximo 2 hijos</strong>: uno izquierdo y uno derecho. El nodo superior es la <strong>raíz</strong>.</p>
+    </div>
+    <div class="card">
+      <h4>🔗 Nodo</h4>
+      <p>Cada nodo guarda un <strong>valor (dato)</strong> y dos referencias: <code>izquierdo</code> y <code>derecho</code>. Si no tiene hijo, la referencia vale <code>None</code>.</p>
+    </div>
+    <div class="card">
+      <h4>📏 Altura</h4>
+      <p>Número de <strong>niveles</strong> del árbol. Un árbol de un solo nodo tiene altura 1. Se calcula con recursividad.</p>
+    </div>
+    <div class="card">
+      <h4>🌍 Usos reales</h4>
+      <p>Sistemas de archivos, árboles genealógicos, inteligencia artificial (minimax), bases de datos, autocompletado, etc.</p>
+    </div>
+  </div>
+
+  <h3>Anatomía de un árbol</h3>
+  <svg class="tree-svg" viewBox="0 0 600 280" width="100%">
+    <!-- Líneas -->
+    <line x1="300" y1="60" x2="180" y2="130" stroke="#334155" stroke-width="2"/>
+    <line x1="300" y1="60" x2="420" y2="130" stroke="#334155" stroke-width="2"/>
+    <line x1="180" y1="130" x2="110" y2="210" stroke="#334155" stroke-width="2"/>
+    <line x1="180" y1="130" x2="250" y2="210" stroke="#334155" stroke-width="2"/>
+    <line x1="420" y1="130" x2="490" y2="210" stroke="#334155" stroke-width="2"/>
+    <!-- Raíz -->
+    <circle cx="300" cy="50" r="38" fill="#7c3aed" stroke="#c4b5fd" stroke-width="2"/>
+    <text x="300" y="44" text-anchor="middle" fill="#f3f0ff" font-weight="bold" font-size="14">Raíz</text>
+    <text x="300" y="62" text-anchor="middle" fill="#c4b5fd" font-size="12">Nivel 0</text>
+    <!-- Nivel 1 -->
+    <circle cx="180" cy="130" r="34" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2"/>
+    <text x="180" y="124" text-anchor="middle" fill="#93c5fd" font-weight="bold" font-size="13">Hijo</text>
+    <text x="180" y="142" text-anchor="middle" fill="#60a5fa" font-size="11">izquierdo</text>
+    <circle cx="420" cy="130" r="34" fill="#3b1f2b" stroke="#f472b6" stroke-width="2"/>
+    <text x="420" y="124" text-anchor="middle" fill="#fda4af" font-weight="bold" font-size="13">Hijo</text>
+    <text x="420" y="142" text-anchor="middle" fill="#f472b6" font-size="11">derecho</text>
+    <!-- Nivel 2 -->
+    <circle cx="110" cy="210" r="30" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="110" y="215" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="12">Hoja</text>
+    <circle cx="250" cy="210" r="30" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="250" y="215" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="12">Hoja</text>
+    <circle cx="490" cy="210" r="30" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="490" y="215" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="12">Hoja</text>
+    <!-- Etiquetas -->
+    <text x="40"  y="215" fill="#64748b" font-size="12">← Nodos sin hijos</text>
+    <text x="300" y="270" text-anchor="middle" fill="#64748b" font-size="12">Árbol de 3 niveles, altura = 3</text>
+  </svg>
+
+  <pre><code><span class="kw">class</span> <span class="fn">Nodo</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>, valor):
+        <span class="kw">self</span>.valor     = valor  <span class="cm"># dato que guarda el nodo</span>
+        <span class="kw">self</span>.izquierdo = <span class="kw">None</span>  <span class="cm"># hijo izquierdo (vacío al inicio)</span>
+        <span class="kw">self</span>.derecho   = <span class="kw">None</span>  <span class="cm"># hijo derecho   (vacío al inicio)</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 2 -->
+<div class="slide" id="slide-2">
+  <h2>Ejercicio 1: Recorridos del Árbol</h2>
+  <div class="cards">
+    <div class="card">
+      <h4>🎯 Problema</h4>
+      <p>Dado un árbol genealógico, "leer" todos los nodos en tres órdenes distintos: <strong>inorden</strong>, <strong>preorden</strong> y <strong>postorden</strong>.</p>
+    </div>
+    <div class="card">
+      <h4>👨‍👩‍👧‍👦 Caso real</h4>
+      <p>Un árbol de carpetas en Windows/Mac. Al listar archivos en orden alfabético se usa inorden; para copiar la estructura completa se usa preorden.</p>
+    </div>
+  </div>
+
+  <h3>El árbol genealógico</h3>
+  <svg class="tree-svg" viewBox="0 0 640 260" width="100%">
+    <line x1="320" y1="55"  x2="190" y2="130" stroke="#334155" stroke-width="2"/>
+    <line x1="320" y1="55"  x2="450" y2="130" stroke="#334155" stroke-width="2"/>
+    <line x1="190" y1="130" x2="110" y2="210" stroke="#334155" stroke-width="2"/>
+    <line x1="190" y1="130" x2="270" y2="210" stroke="#334155" stroke-width="2"/>
+    <line x1="450" y1="130" x2="530" y2="210" stroke="#334155" stroke-width="2"/>
+    <!-- Raíz -->
+    <circle cx="320" cy="45" r="36" fill="#7c3aed" stroke="#c4b5fd" stroke-width="2"/>
+    <text x="320" y="50" text-anchor="middle" fill="#f3f0ff" font-weight="bold" font-size="14">Ana</text>
+    <!-- Nivel 1 -->
+    <circle cx="190" cy="130" r="34" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2"/>
+    <text x="190" y="135" text-anchor="middle" fill="#93c5fd" font-weight="bold" font-size="14">Bruno</text>
+    <circle cx="450" cy="130" r="34" fill="#3b1f2b" stroke="#f472b6" stroke-width="2"/>
+    <text x="450" y="135" text-anchor="middle" fill="#fda4af" font-weight="bold" font-size="14">Carla</text>
+    <!-- Nivel 2 -->
+    <circle cx="110" cy="210" r="32" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="110" y="215" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="13">Diego</text>
+    <circle cx="270" cy="210" r="32" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="270" y="215" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="13">Eva</text>
+    <circle cx="530" cy="210" r="32" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="530" y="215" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="13">Felipe</text>
+    <!-- Leyenda -->
+    <circle cx="30" cy="50" r="8" fill="#7c3aed"/>
+    <text x="44" y="54" fill="#c4b5fd" font-size="11">Raíz</text>
+    <circle cx="30" cy="72" r="8" fill="#1e3a5f" stroke="#60a5fa" stroke-width="1.5"/>
+    <text x="44" y="76" fill="#60a5fa" font-size="11">Hijo izq.</text>
+    <circle cx="30" cy="94" r="8" fill="#3b1f2b" stroke="#f472b6" stroke-width="1.5"/>
+    <text x="44" y="98" fill="#f472b6" font-size="11">Hijo der.</text>
+    <circle cx="30" cy="116" r="8" fill="#065f46" stroke="#34d399" stroke-width="1.5"/>
+    <text x="44" y="120" fill="#34d399" font-size="11">Hojas</text>
+  </svg>
+
+  <h3>Los tres recorridos</h3>
+  <div class="traversal-box">
+    <div class="trav-card">
+      <h4>🔵 Inorden (izq → raíz → der)</h4>
+      <p style="font-size:.85rem">Primero todo lo de la izquierda, luego yo, luego todo lo de la derecha.</p>
+      <div class="trav-seq" style="margin-top:10px">
+        <div class="trav-node left">Diego</div><div class="trav-arrow">→</div>
+        <div class="trav-node left">Bruno</div><div class="trav-arrow">→</div>
+        <div class="trav-node left">Eva</div><div class="trav-arrow">→</div>
+        <div class="trav-node root">Ana</div><div class="trav-arrow">→</div>
+        <div class="trav-node right">Carla</div><div class="trav-arrow">→</div>
+        <div class="trav-node right">Felipe</div>
+      </div>
+    </div>
+    <div class="trav-card">
+      <h4>🟢 Preorden (raíz → izq → der)</h4>
+      <p style="font-size:.85rem">Primero yo, luego todo lo de la izquierda, luego todo lo de la derecha.</p>
+      <div class="trav-seq" style="margin-top:10px">
+        <div class="trav-node root">Ana</div><div class="trav-arrow">→</div>
+        <div class="trav-node left">Bruno</div><div class="trav-arrow">→</div>
+        <div class="trav-node left">Diego</div><div class="trav-arrow">→</div>
+        <div class="trav-node left">Eva</div><div class="trav-arrow">→</div>
+        <div class="trav-node right">Carla</div><div class="trav-arrow">→</div>
+        <div class="trav-node right">Felipe</div>
+      </div>
+    </div>
+    <div class="trav-card">
+      <h4>🔴 Postorden (izq → der → raíz)</h4>
+      <p style="font-size:.85rem">Primero todo lo de la izquierda, luego todo lo de la derecha, y yo al final.</p>
+      <div class="trav-seq" style="margin-top:10px">
+        <div class="trav-node left">Diego</div><div class="trav-arrow">→</div>
+        <div class="trav-node left">Eva</div><div class="trav-arrow">→</div>
+        <div class="trav-node left">Bruno</div><div class="trav-arrow">→</div>
+        <div class="trav-node right">Felipe</div><div class="trav-arrow">→</div>
+        <div class="trav-node right">Carla</div><div class="trav-arrow">→</div>
+        <div class="trav-node root">Ana</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 3 -->
+<div class="slide" id="slide-3">
+  <h2>Código — Recorridos</h2>
+  <pre><code><span class="cm"># Árbol ya construido globalmente (raiz = Nodo("Ana"), ...)</span>
+
+<span class="cm"># Inorden: izq → raíz → der</span>
+<span class="kw">def</span> <span class="fn">inorden</span>(nodo, res=<span class="kw">None</span>):
+    <span class="kw">if</span> res <span class="kw">is None</span>: res = []
+    <span class="kw">if</span> nodo <span class="kw">is None</span>: <span class="kw">return</span> res  <span class="cm"># caso base</span>
+    <span class="fn">inorden</span>(nodo.izquierdo, res)
+    res.append(nodo.valor)
+    <span class="fn">inorden</span>(nodo.derecho, res)
+    <span class="kw">return</span> res
+
+<span class="cm"># Preorden: raíz → izq → der</span>
+<span class="kw">def</span> <span class="fn">preorden</span>(nodo, res=<span class="kw">None</span>):
+    <span class="kw">if</span> res <span class="kw">is None</span>: res = []
+    <span class="kw">if</span> nodo <span class="kw">is None</span>: <span class="kw">return</span> res
+    res.append(nodo.valor)
+    <span class="fn">preorden</span>(nodo.izquierdo, res)
+    <span class="fn">preorden</span>(nodo.derecho, res)
+    <span class="kw">return</span> res
+
+<span class="cm"># Postorden: izq → der → raíz</span>
+<span class="kw">def</span> <span class="fn">postorden</span>(nodo, res=<span class="kw">None</span>):
+    <span class="kw">if</span> res <span class="kw">is None</span>: res = []
+    <span class="kw">if</span> nodo <span class="kw">is None</span>: <span class="kw">return</span> res
+    <span class="fn">postorden</span>(nodo.izquierdo, res)
+    <span class="fn">postorden</span>(nodo.derecho, res)
+    res.append(nodo.valor)
+    <span class="kw">return</span> res
+
+<span class="cm"># Altura: 1 + max(altura_izq, altura_der)</span>
+<span class="kw">def</span> <span class="fn">altura</span>(nodo):
+    <span class="kw">if</span> nodo <span class="kw">is None</span>: <span class="kw">return</span> <span class="nu">0</span>  <span class="cm"># caso base</span>
+    <span class="kw">return</span> <span class="nu">1</span> + <span class="fn">max</span>(<span class="fn">altura</span>(nodo.izquierdo), <span class="fn">altura</span>(nodo.derecho))</code></pre>
+
+  <div class="cards">
+    <div class="card">
+      <h4>🧠 Clave: Recursividad</h4>
+      <p>Cada función se llama a sí misma con un subárbol más pequeño. El <strong>caso base</strong> (<code>nodo is None</code>) detiene la recursión.</p>
+    </div>
+    <div class="card">
+      <h4>🧠 ¿Cuándo usar cada uno?</h4>
+      <ul style="margin-top:6px">
+        <li><strong>Inorden</strong> → leer valores ordenados (BST)</li>
+        <li><strong>Preorden</strong> → copiar/serializar árbol</li>
+        <li><strong>Postorden</strong> → eliminar nodos, evaluar expresiones</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📏 Altura recursiva</h4>
+      <p>La altura es <code>1 + max(altura_izq, altura_der)</code>.<br>Compara los dos subárboles y queda con el más alto.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 4 -->
+<div class="slide" id="slide-4">
+  <h2>Ejercicio 2: Árbol BST — Agenda</h2>
+  <div class="cards">
+    <div class="card">
+      <h4>🎯 Problema</h4>
+      <p>Implementar una <strong>agenda de contactos</strong> usando un BST. Los nombres se guardan en orden alfabético de forma automática: menores a la izquierda, mayores a la derecha.</p>
+    </div>
+    <div class="card">
+      <h4>📱 Caso real</h4>
+      <p>Los motores de bases de datos usan BSTs (índices B-Tree) para hacer búsquedas en millones de registros en milisegundos.</p>
+    </div>
+    <div class="card">
+      <h4>⚡ Ventaja</h4>
+      <p>En un árbol equilibrado de N nodos, buscar tarda <strong>O(log N)</strong> pasos. Con 1 millón de contactos: solo ~20 comparaciones.</p>
+    </div>
+  </div>
+
+  <h3>La regla del BST</h3>
+  <div class="formula">
+    Si <strong>nombre &lt; nodo actual</strong> → ir a la <strong style="color:#60a5fa">IZQUIERDA</strong><br>
+    Si <strong>nombre &gt; nodo actual</strong> → ir a la <strong style="color:#f472b6">DERECHA</strong><br>
+    Si <strong>nombre == nodo actual</strong> → ¡<strong style="color:#34d399">ENCONTRADO!</strong>
+  </div>
+
+  <h3>BST resultante — insertar: Mario, Ana, Pedro, Carlos, Lucía, Sofía, Beatriz</h3>
+  <svg class="tree-svg" viewBox="0 0 700 320" width="100%">
+    <!-- Líneas -->
+    <line x1="350" y1="55"  x2="200" y2="130" stroke="#334155" stroke-width="2"/>
+    <line x1="350" y1="55"  x2="500" y2="130" stroke="#334155" stroke-width="2"/>
+    <line x1="200" y1="130" x2="280" y2="210" stroke="#334155" stroke-width="2"/>
+    <line x1="500" y1="130" x2="430" y2="210" stroke="#334155" stroke-width="2"/>
+    <line x1="500" y1="130" x2="570" y2="210" stroke="#334155" stroke-width="2"/>
+    <line x1="280" y1="210" x2="230" y2="285" stroke="#334155" stroke-width="2"/>
+    <!-- Nodos -->
+    <circle cx="350" cy="45" r="38" fill="#7c3aed" stroke="#c4b5fd" stroke-width="2"/>
+    <text x="350" y="50" text-anchor="middle" fill="#f3f0ff" font-weight="bold" font-size="14">Mario</text>
+    <circle cx="200" cy="130" r="34" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2"/>
+    <text x="200" y="135" text-anchor="middle" fill="#93c5fd" font-weight="bold" font-size="14">Ana</text>
+    <circle cx="500" cy="130" r="34" fill="#3b1f2b" stroke="#f472b6" stroke-width="2"/>
+    <text x="500" y="135" text-anchor="middle" fill="#fda4af" font-weight="bold" font-size="14">Pedro</text>
+    <circle cx="280" cy="210" r="34" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2"/>
+    <text x="280" y="215" text-anchor="middle" fill="#93c5fd" font-weight="bold" font-size="14">Carlos</text>
+    <circle cx="430" cy="210" r="34" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="430" y="215" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="14">Lucía</text>
+    <circle cx="570" cy="210" r="34" fill="#3b1f2b" stroke="#f472b6" stroke-width="2"/>
+    <text x="570" y="215" text-anchor="middle" fill="#fda4af" font-weight="bold" font-size="14">Sofía</text>
+    <circle cx="230" cy="285" r="32" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+    <text x="230" y="290" text-anchor="middle" fill="#a7f3d0" font-weight="bold" font-size="13">Beatriz</text>
+    <!-- Nota alfabética -->
+    <text x="10" y="320" fill="#64748b" font-size="11">Ana &lt; Carlos &lt; Lucía &lt; Mario &lt; Pedro &lt; Sofía  (orden alfabético)</text>
+  </svg>
+
+  <h3>Búsqueda de "Lucía" — paso a paso</h3>
+  <div class="search-path">
+    <div class="sp-row">
+      <div class="sp-node visit">Mario</div>
+      <div class="sp-msg">¿"Lucía" &lt; "Mario"? Sí → ir a la IZQUIERDA</div>
+    </div>
+    <div class="sp-row">
+      <div class="sp-node visit">Ana</div>
+      <div class="sp-msg">¿"Lucía" &lt; "Ana"? No → ir a la DERECHA</div>
+    </div>
+    <div class="sp-row">
+      <div class="sp-node found">Carlos → Lucía</div>
+      <div class="sp-msg">¿"Lucía" &lt; "Carlos"? No → ir a la DERECHA → ¡Encontrado en 3 pasos!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 5 -->
+<div class="slide" id="slide-5">
+  <h2>Código — BST (Insertar y Buscar)</h2>
+  <pre><code><span class="kw">class</span> <span class="fn">AgendaBST</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>):
+        <span class="kw">self</span>.raiz = <span class="kw">None</span>  <span class="cm"># árbol vacío</span>
+
+    <span class="kw">def</span> <span class="fn">insertar</span>(<span class="kw">self</span>, nombre):
+        <span class="kw">if self</span>.raiz <span class="kw">is None</span>: <span class="kw">self</span>.raiz = <span class="fn">Nodo</span>(nombre)
+        <span class="kw">else</span>: <span class="kw">self</span>.<span class="fn">_insertar</span>(<span class="kw">self</span>.raiz, nombre)
+
+    <span class="kw">def</span> <span class="fn">_insertar</span>(<span class="kw">self</span>, nodo, nombre):
+        <span class="kw">if</span> nombre &lt; nodo.nombre:
+            <span class="kw">if</span> nodo.izquierdo <span class="kw">is None</span>: nodo.izquierdo = <span class="fn">Nodo</span>(nombre)  <span class="cm"># hueco</span>
+            <span class="kw">else</span>: <span class="kw">self</span>.<span class="fn">_insertar</span>(nodo.izquierdo, nombre)
+        <span class="kw">elif</span> nombre &gt; nodo.nombre:
+            <span class="kw">if</span> nodo.derecho <span class="kw">is None</span>: nodo.derecho = <span class="fn">Nodo</span>(nombre)    <span class="cm"># hueco</span>
+            <span class="kw">else</span>: <span class="kw">self</span>.<span class="fn">_insertar</span>(nodo.derecho, nombre)
+        <span class="cm"># igual → ignorar (no duplicados)</span>
+
+    <span class="kw">def</span> <span class="fn">buscar</span>(<span class="kw">self</span>, nombre):
+        <span class="kw">return self</span>.<span class="fn">_buscar</span>(<span class="kw">self</span>.raiz, nombre)
+
+    <span class="kw">def</span> <span class="fn">_buscar</span>(<span class="kw">self</span>, nodo, nombre):
+        <span class="kw">if</span> nodo <span class="kw">is None</span>: <span class="kw">return False</span>          <span class="cm"># no existe</span>
+        <span class="kw">if</span> nombre == nodo.nombre: <span class="kw">return True</span>  <span class="cm"># encontrado</span>
+        <span class="kw">if</span> nombre &lt; nodo.nombre: <span class="kw">return self</span>.<span class="fn">_buscar</span>(nodo.izquierdo, nombre)
+        <span class="kw">return self</span>.<span class="fn">_buscar</span>(nodo.derecho, nombre)
+
+    <span class="kw">def</span> <span class="fn">listar</span>(<span class="kw">self</span>):  <span class="cm"># inorden → siempre ordenado en BST</span>
+        lista = []
+        <span class="kw">self</span>.<span class="fn">_inorden</span>(<span class="kw">self</span>.raiz, lista)
+        <span class="kw">return</span> lista
+
+    <span class="kw">def</span> <span class="fn">_inorden</span>(<span class="kw">self</span>, nodo, lista):
+        <span class="kw">if</span> nodo <span class="kw">is None</span>: <span class="kw">return</span>
+        <span class="kw">self</span>.<span class="fn">_inorden</span>(nodo.izquierdo, lista)
+        lista.append(nodo.nombre)
+        <span class="kw">self</span>.<span class="fn">_inorden</span>(nodo.derecho, lista)</code></pre>
+
+  <div class="cards">
+    <div class="card">
+      <h4>🔑 Prefijo <code>_</code></h4>
+      <p>Los métodos con <code>_</code> son <strong>privados</strong> (auxiliares internos). No se llaman desde fuera de la clase. Separan la lógica pública de la recursiva.</p>
+    </div>
+    <div class="card">
+      <h4>🔑 Insertar vs Buscar</h4>
+      <p>Ambos bajan por el árbol con la misma lógica (izq/der). La diferencia: insertar <strong>crea</strong> el nodo cuando llega a <code>None</code>; buscar devuelve <code>False</code>.</p>
+    </div>
+    <div class="card">
+      <h4>🔑 Listar en orden</h4>
+      <p>Usar <strong>inorden</strong> en un BST da los valores ordenados. ¡Gratis! El árbol ya los tiene organizados por su estructura.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 6 -->
+<div class="slide" id="slide-6">
+  <h2>Resumen y Trucos de Examen</h2>
+
+  <h3>Comparativa de los tres recorridos</h3>
+  <table>
+    <thead>
+      <tr><th>Recorrido</th><th>Orden de visita</th><th>Mnemotécnico</th><th>Uso típico</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="color:#60a5fa;font-weight:bold">Inorden</td>
+        <td>izq → raíz → der</td>
+        <td>"Sándwich: pan, relleno, pan"</td>
+        <td>Valores ordenados en BST</td>
+      </tr>
+      <tr>
+        <td style="color:#34d399;font-weight:bold">Preorden</td>
+        <td>raíz → izq → der</td>
+        <td>"Yo primero, luego mis hijos"</td>
+        <td>Copiar/serializar árbol</td>
+      </tr>
+      <tr>
+        <td style="color:#f472b6;font-weight:bold">Postorden</td>
+        <td>izq → der → raíz</td>
+        <td>"Hijos primero, yo al final"</td>
+        <td>Eliminar nodos, expresiones</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Checklist para el examen ✅</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>Todo recorrido recursivo necesita <strong>caso base</strong>: <code>if nodo is None: return</code>. Sin él, el programa entra en bucle infinito.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>En un <strong>BST</strong>: menores a la izquierda, mayores a la derecha. Inorden siempre da los valores ordenados.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>La <strong>altura</strong> es recursiva: <code>1 + max(altura(izq), altura(der))</code>. Un árbol vacío tiene altura 0.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div>Al insertar en BST: bajar comparando hasta encontrar <code>None</code>, ahí crear el nuevo <code>Nodo</code>.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div>Los métodos auxiliares recursivos suelen tener <code>_</code> al inicio. Se llaman desde el método público que inicializa la llamada con la raíz.</div>
+    </div>
+  </div>
+
+  <div class="note">
+    💡 Regla de oro: si ves recursividad en árboles, pregúntate siempre:<br>
+    1) ¿Cuál es el <strong>caso base</strong>? (normalmente <code>nodo is None</code>)<br>
+    2) ¿Qué hago <strong>antes</strong> de llamar a los hijos? (preorden)<br>
+    3) ¿Qué hago <strong>entre</strong> los hijos? (inorden)<br>
+    4) ¿Qué hago <strong>después</strong> de los hijos? (postorden)
+  </div>
+</div>
+
+<script>
+  const titles = [
+    "1. ¿Qué es un Árbol?",
+    "2. Ejercicio: Recorridos",
+    "3. Código Recorridos",
+    "4. Ejercicio: BST Agenda",
+    "5. Código BST",
+    "6. Resumen Examen"
+  ];
+  const nav = document.getElementById('navBtns');
+  const slides = document.querySelectorAll('.slide');
+
+  titles.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = t;
+    btn.onclick = () => goTo(i);
+    nav.appendChild(btn);
+  });
+
+  function goTo(index) {
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    document.querySelectorAll('nav button').forEach((b, i) => b.classList.toggle('active', i === index));
+  }
+
+  goTo(0);
+
+  document.addEventListener('keydown', e => {
+    const current = [...slides].findIndex(s => s.classList.contains('active'));
+    if (e.key === 'ArrowRight' && current < slides.length - 1) goTo(current + 1);
+    if (e.key === 'ArrowLeft'  && current > 0)                 goTo(current - 1);
+  });
+</script>
+</body>
+</html>
