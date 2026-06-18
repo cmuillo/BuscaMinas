@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clases en Python – Videojuego</title>
+<style>
+/* ======= RESET & BASE ======= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0b0b18;color:#e0e0e0;overflow:hidden;height:100vh}
+
+/* ======= SLIDE ENGINE ======= */
+.deck{width:100vw;height:100vh;position:relative}
+.slide{display:none;width:100%;height:100%;padding:44px 80px;flex-direction:column;justify-content:center;animation:fadeUp .4s ease}
+.slide.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ======= TEMAS ======= */
+.s-cover  {background:linear-gradient(135deg,#0d0d1f 0%,#1a1040 60%,#2d1b69 100%)}
+.s-blue   {background:linear-gradient(135deg,#091420 0%,#112233 100%)}
+.s-teal   {background:linear-gradient(135deg,#041a14 0%,#083325 100%)}
+.s-orange {background:linear-gradient(135deg,#1a0900 0%,#3a1500 100%)}
+.s-purple {background:linear-gradient(135deg,#12052a 0%,#240a55 100%)}
+.s-green  {background:linear-gradient(135deg,#051205 0%,#0e2a0e 100%)}
+.s-dark   {background:linear-gradient(135deg,#0a0a0a 0%,#181828 100%)}
+
+/* ======= TIPOGRAFÍA ======= */
+h1{font-size:2.8rem;font-weight:800;line-height:1.15}
+h2{font-size:1.9rem;font-weight:700;margin-bottom:20px}
+p {font-size:1rem;line-height:1.75;max-width:860px}
+.sub{font-size:1.15rem;opacity:.7;margin-top:10px}
+.num{position:absolute;top:16px;right:26px;font-size:.78rem;opacity:.35;font-weight:600}
+
+/* highlights */
+.hl {color:#8be9fd;font-weight:700}
+.hg {color:#50fa7b;font-weight:700}
+.ho {color:#ffb347;font-weight:700}
+.hp {color:#ff79c6;font-weight:700}
+.hy {color:#ffe066;font-weight:700}
+
+/* ======= CODE ======= */
+pre{background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px 20px;font-size:.85rem;line-height:1.65;overflow-x:auto;margin-top:10px}
+code{font-family:'Cascadia Code','Fira Code',Consolas,monospace}
+.kw{color:#ff79c6}.fn{color:#50fa7b}.st{color:#f1fa8c}
+.cm{color:#5566aa;font-style:italic}.nb{color:#8be9fd}.nu{color:#bd93f9}
+
+/* ======= CARDS ======= */
+.cards{display:grid;gap:16px;margin-top:14px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:18px 20px}
+.card-icon{font-size:1.8rem;margin-bottom:8px}
+.card h3{font-size:1.05rem;margin-bottom:6px}
+.card p{font-size:.9rem;opacity:.82}
+
+/* ======= DIAGRAMA CLASE ======= */
+.uml{border:2px solid;border-radius:10px;overflow:hidden;font-size:.85rem;width:100%}
+.uml-title{font-weight:800;text-align:center;padding:9px 0;letter-spacing:1px}
+.uml-sec{padding:9px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.uml-sec div{padding:3px 0;font-family:Consolas,monospace;font-size:.8rem}
+.at{color:#8be9fd}.mt{color:#50fa7b}
+
+.uml-blue .uml-title{background:#1a6aa8;color:#fff}
+.uml-blue{border-color:#1a6aa8}
+.uml-green .uml-title{background:#1a7a3a;color:#fff}
+.uml-green{border-color:#1a7a3a}
+
+/* ======= HERENCIA VISUAL ======= */
+.inherit-tree{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:10px}
+.arrow-down{font-size:1.6rem;color:#ffe066;line-height:1}
+.inherit-label{font-size:.75rem;color:#ffe066;margin-bottom:2px}
+.arrow-side{font-size:1.2rem;color:#ffe066;padding:0 8px}
+.uml-row{display:flex;gap:24px;justify-content:center;align-items:flex-start}
+
+/* ======= FLUJO ======= */
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.fbox{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.18);border-radius:10px;padding:12px 16px;text-align:center;font-size:.85rem;min-width:110px}
+.fbox.blue{background:rgba(139,233,253,.1);border-color:#8be9fd}
+.fbox.green{background:rgba(80,250,123,.1);border-color:#50fa7b}
+.fbox.orange{background:rgba(255,179,71,.1);border-color:#ffb347}
+.fbox.red{background:rgba(255,80,80,.1);border-color:#ff5555}
+.farrow{font-size:1.3rem;padding:0 6px;opacity:.55}
+
+/* ======= LISTA ======= */
+ul.il{list-style:none;margin-top:12px}
+ul.il li{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font-size:.97rem}
+ul.il li .ic{font-size:1.15rem;flex-shrink:0}
+
+/* ======= SELF BOX ======= */
+.self-demo{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-top:16px}
+.obj-card{background:rgba(255,255,255,.05);border:2px solid #8be9fd;border-radius:12px;padding:16px 20px;min-width:190px}
+.obj-card .obj-title{font-size:.8rem;opacity:.55;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.obj-card .attr{font-family:Consolas,monospace;font-size:.82rem;padding:3px 0;color:#8be9fd}
+
+/* ======= NAVEGACIÓN ======= */
+.nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:50px;padding:9px 20px;backdrop-filter:blur(8px)}
+.nav button{background:none;border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:50px;padding:6px 20px;cursor:pointer;font-size:.9rem;transition:background .2s}
+.nav button:hover{background:rgba(255,255,255,.1)}
+.nav button:disabled{opacity:.22;cursor:default}
+.prog{font-size:.8rem;opacity:.5;min-width:52px;text-align:center}
+.dots{display:flex;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:background .2s}
+.dot.active{background:#8be9fd}
+
+@media(max-width:800px){
+  .slide{padding:28px 28px}
+  h1{font-size:1.9rem}h2{font-size:1.4rem}
+  .c2,.c3{grid-template-columns:1fr}
+  .uml-row{flex-direction:column;align-items:center}
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ══════════════════════════════════════
+     SLIDE 1  PORTADA
+══════════════════════════════════════ -->
+<div class="slide s-cover active">
+<div class="num">1/10</div>
+<p style="font-size:.8rem;opacity:.45;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px">Python · Estudio</p>
+<h1>Clases en <span class="hl">Python</span></h1>
+<p class="sub">Dos ejemplos con temática de <span class="ho">Videojuego</span> ⚔️</p>
+<div style="margin-top:36px;display:flex;gap:8px;flex-wrap:wrap">
+  <span style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 12px;font-size:.82rem">🏗 Clase base</span>
+  <span style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 12px;font-size:.82rem">📦 Objetos</span>
+  <span style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 12px;font-size:.82rem">🔧 Métodos</span>
+  <span style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 12px;font-size:.82rem">🧬 Herencia</span>
+  <span style="background:rgba(255,255,255,.08);border-radius:6px;padding:3px 12px;font-size:.82rem">✏️ super()</span>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 2  ¿QUÉ ES UNA CLASE?
+══════════════════════════════════════ -->
+<div class="slide s-blue">
+<div class="num">2/10</div>
+<h2>¿Qué es una <span class="hl">clase</span>?</h2>
+<p>Una clase es un <strong>molde</strong>. Define qué datos tiene algo y qué puede hacer.<br>
+Los <span class="hg">objetos</span> son los ejemplares reales creados a partir de ese molde.</p>
+
+<div class="cards c3" style="margin-top:22px">
+  <div class="card">
+    <div class="card-icon">📋</div>
+    <h3 class="hl">Clase</h3>
+    <p>El plano o molde. Describe la <em>forma</em> de algo. Solo existe en el código.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon">⚔️</div>
+    <h3 class="hg">Objeto</h3>
+    <p>Un ejemplar concreto creado desde la clase. Tiene sus propios datos reales.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon">🔧</div>
+    <h3 class="ho">Método</h3>
+    <p>Una función <em>dentro</em> de la clase. Define lo que el objeto sabe hacer.</p>
+  </div>
+</div>
+
+<div style="margin-top:22px">
+<pre><code><span class="cm"># Clase = molde ────────────────────────────────</span>
+<span class="kw">class</span> <span class="fn">Personaje</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nb">self</span>, nombre, vida):
+        <span class="nb">self</span>.nombre = nombre
+        <span class="nb">self</span>.vida   = vida
+
+<span class="cm"># Objetos = ejemplares concretos ────────────────</span>
+heroe   = <span class="fn">Personaje</span>(<span class="st">"Arthas"</span>, <span class="nu">100</span>)   <span class="cm"># objeto 1</span>
+enemigo = <span class="fn">Personaje</span>(<span class="st">"Orco"</span>,   <span class="nu">60</span>)    <span class="cm"># objeto 2</span></code></pre>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 3  CONSTRUCTOR & SELF
+══════════════════════════════════════ -->
+<div class="slide s-teal">
+<div class="num">3/10</div>
+<h2><span class="hg">__init__</span> y <span class="hg">self</span></h2>
+<p><code>__init__</code> es el <strong>constructor</strong>: se ejecuta automáticamente al crear el objeto.<br>
+<span class="hg">self</span> es la referencia al objeto recién creado — así cada objeto guarda sus <em>propios</em> datos.</p>
+
+<div class="self-demo">
+  <div>
+<pre style="flex:1"><code><span class="kw">class</span> <span class="fn">Personaje</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nb">self</span>, nombre, vida, ataque):
+        <span class="nb">self</span>.nombre  = nombre   <span class="cm"># dato del objeto</span>
+        <span class="nb">self</span>.vida    = vida     <span class="cm"># dato del objeto</span>
+        <span class="nb">self</span>.ataque  = ataque   <span class="cm"># dato del objeto</span>
+
+heroe   = <span class="fn">Personaje</span>(<span class="st">"Arthas"</span>, <span class="nu">100</span>, <span class="nu">15</span>)
+enemigo = <span class="fn">Personaje</span>(<span class="st">"Orco"</span>,   <span class="nu">60</span>,  <span class="nu">10</span>)</code></pre>
+  </div>
+
+  <div style="display:flex;gap:14px;flex-wrap:wrap">
+    <div class="obj-card">
+      <div class="obj-title">objeto: heroe</div>
+      <div class="attr">nombre  = "Arthas"</div>
+      <div class="attr">vida    = 100</div>
+      <div class="attr">ataque  = 15</div>
+    </div>
+    <div class="obj-card" style="border-color:#50fa7b">
+      <div class="obj-title">objeto: enemigo</div>
+      <div class="attr" style="color:#50fa7b">nombre  = "Orco"</div>
+      <div class="attr" style="color:#50fa7b">vida    = 60</div>
+      <div class="attr" style="color:#50fa7b">ataque  = 10</div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:14px;font-size:.9rem;opacity:.7">Mismo molde → datos distintos. Los objetos son <strong>independientes</strong> entre sí.</p>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 4  EJEMPLO 1 – MÉTODOS
+══════════════════════════════════════ -->
+<div class="slide s-orange">
+<div class="num">4/10</div>
+<h2>Ejemplo 1 — <span class="ho">Métodos</span> del personaje</h2>
+<p>Los métodos son funciones dentro de la clase. Siempre reciben <span class="ho">self</span> para acceder a los datos del objeto.</p>
+
+<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px">
+<pre style="flex:1;min-width:260px"><code><span class="kw">def</span> <span class="fn">atacar</span>(<span class="nb">self</span>, objetivo):
+    <span class="cm"># Resta vida al objetivo usando el ataque propio</span>
+    objetivo.vida -= <span class="nb">self</span>.ataque
+    <span class="nb">print</span>(<span class="st">f"{</span><span class="nb">self</span><span class="st">.nombre} ataca a {objetivo.nombre}"</span>
+          <span class="st">f" por {</span><span class="nb">self</span><span class="st">.ataque} de daño."</span>)
+
+<span class="kw">def</span> <span class="fn">mostrar_estado</span>(<span class="nb">self</span>):
+    <span class="cm"># Imprime los datos actuales del personaje</span>
+    <span class="nb">print</span>(<span class="st">f"[{</span><span class="nb">self</span><span class="st">.nombre}]  "</span>
+          <span class="st">f"Vida: {</span><span class="nb">self</span><span class="st">.vida}  "</span>
+          <span class="st">f"Ataque: {</span><span class="nb">self</span><span class="st">.ataque}"</span>)</code></pre>
+
+  <div style="flex:1;min-width:200px">
+    <div class="flow" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div class="fbox blue" style="width:100%">🗡 <strong>heroe.atacar(enemigo)</strong></div>
+      <div style="margin-left:18px;font-size:.82rem;opacity:.6">↓ enemigo.vida -= heroe.ataque</div>
+      <div class="fbox green" style="width:90%;margin-left:18px">enemigo.vida: 60 → <strong>45</strong></div>
+
+      <div class="fbox orange" style="width:100%;margin-top:8px">🛡 <strong>enemigo.atacar(heroe)</strong></div>
+      <div style="margin-left:18px;font-size:.82rem;opacity:.6">↓ heroe.vida -= enemigo.ataque</div>
+      <div class="fbox green" style="width:90%;margin-left:18px">heroe.vida: 100 → <strong>90</strong></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 5  EJEMPLO 1 – CÓDIGO COMPLETO
+══════════════════════════════════════ -->
+<div class="slide s-dark">
+<div class="num">5/10</div>
+<h2>Ejemplo 1 — <span class="hl">Código completo</span></h2>
+
+<pre><code><span class="kw">class</span> <span class="fn">Personaje</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nb">self</span>, nombre, vida, ataque):
+        <span class="nb">self</span>.nombre = nombre
+        <span class="nb">self</span>.vida   = vida
+        <span class="nb">self</span>.ataque = ataque
+
+    <span class="kw">def</span> <span class="fn">atacar</span>(<span class="nb">self</span>, objetivo):
+        objetivo.vida -= <span class="nb">self</span>.ataque
+        <span class="nb">print</span>(<span class="st">f"{</span><span class="nb">self</span><span class="st">.nombre} ataca a {objetivo.nombre} por {</span><span class="nb">self</span><span class="st">.ataque} de daño."</span>)
+
+    <span class="kw">def</span> <span class="fn">mostrar_estado</span>(<span class="nb">self</span>):
+        <span class="nb">print</span>(<span class="st">f"[{</span><span class="nb">self</span><span class="st">.nombre}]  Vida: {</span><span class="nb">self</span><span class="st">.vida}  Ataque: {</span><span class="nb">self</span><span class="st">.ataque}"</span>)
+
+
+heroe   = <span class="fn">Personaje</span>(<span class="st">"Arthas"</span>, <span class="nu">100</span>, <span class="nu">15</span>)
+enemigo = <span class="fn">Personaje</span>(<span class="st">"Orco"</span>,    <span class="nu">60</span>, <span class="nu">10</span>)
+
+heroe.mostrar_estado()      <span class="cm"># [Arthas]  Vida: 100  Ataque: 15</span>
+enemigo.mostrar_estado()    <span class="cm"># [Orco]    Vida: 60   Ataque: 10</span>
+
+heroe.atacar(enemigo)       <span class="cm"># Arthas ataca a Orco por 15 de daño.</span>
+enemigo.atacar(heroe)       <span class="cm"># Orco ataca a Arthas por 10 de daño.</span>
+
+heroe.mostrar_estado()      <span class="cm"># [Arthas]  Vida: 90   Ataque: 15</span>
+enemigo.mostrar_estado()    <span class="cm"># [Orco]    Vida: 45   Ataque: 10</span></code></pre>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 6  ¿QUÉ ES HERENCIA?
+══════════════════════════════════════ -->
+<div class="slide s-purple">
+<div class="num">6/10</div>
+<h2>¿Qué es la <span class="hp">Herencia</span>?</h2>
+<p>Una clase <strong>hija</strong> puede heredar todo lo que tiene la clase <strong>padre</strong>.<br>
+No hay que repetir el código — y además puedes <em>agregar</em> cosas nuevas.</p>
+
+<div style="margin-top:20px">
+  <div class="inherit-tree">
+    <div style="width:260px">
+      <div class="uml uml-blue">
+        <div class="uml-title">🧱 Personaje  (padre)</div>
+        <div class="uml-sec">
+          <div class="at">nombre, vida, ataque</div>
+        </div>
+        <div class="uml-sec">
+          <div class="mt">atacar(objetivo)</div>
+          <div class="mt">mostrar_estado()</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center">
+      <div class="inherit-label">hereda todo ↓</div>
+      <div class="arrow-down">▼</div>
+    </div>
+
+    <div style="width:300px">
+      <div class="uml uml-green">
+        <div class="uml-title">🧙 Mago  (hijo)</div>
+        <div class="uml-sec">
+          <div class="at">nombre, vida, ataque <span style="opacity:.5">(heredados)</span></div>
+          <div class="at" style="color:#ffe066">mana <span style="opacity:.7">← nuevo</span></div>
+        </div>
+        <div class="uml-sec">
+          <div class="mt">atacar() <span style="opacity:.5">(heredado)</span></div>
+          <div class="mt" style="color:#ffe066">lanzar_hechizo() ← nuevo</div>
+          <div class="mt" style="color:#ffe066">mostrar_estado() ← override</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 7  SUPER()
+══════════════════════════════════════ -->
+<div class="slide s-green">
+<div class="num">7/10</div>
+<h2><span class="hg">super()</span> — llamar al padre</h2>
+<p><code>super()</code> te da acceso al constructor (o cualquier método) de la clase padre.<br>
+Así no tienes que repetir <code>self.nombre = nombre</code> y el resto.</p>
+
+<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px">
+<div style="flex:1;min-width:240px">
+<p style="font-size:.85rem;color:#ff5555;margin-bottom:6px">❌ Sin super — repetición innecesaria</p>
+<pre><code><span class="kw">class</span> <span class="fn">Mago</span>(<span class="fn">Personaje</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nb">self</span>, nombre, vida, ataque, mana):
+        <span class="nb">self</span>.nombre = nombre  <span class="cm"># repetido</span>
+        <span class="nb">self</span>.vida   = vida    <span class="cm"># repetido</span>
+        <span class="nb">self</span>.ataque = ataque  <span class="cm"># repetido</span>
+        <span class="nb">self</span>.mana   = mana</code></pre>
+</div>
+<div style="flex:1;min-width:240px">
+<p style="font-size:.85rem;color:#50fa7b;margin-bottom:6px">✅ Con super — limpio y correcto</p>
+<pre><code><span class="kw">class</span> <span class="fn">Mago</span>(<span class="fn">Personaje</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nb">self</span>, nombre, vida, ataque, mana):
+        <span class="cm"># Llama al __init__ del padre</span>
+        <span class="nb">super</span>().<span class="fn">__init__</span>(nombre, vida, ataque)
+        <span class="cm"># Solo agrega lo nuevo del Mago</span>
+        <span class="nb">self</span>.mana = mana</code></pre>
+</div>
+</div>
+
+<ul class="il" style="margin-top:14px">
+  <li><span class="ic">📦</span><code>super()</code> reutiliza el trabajo ya hecho en el padre</li>
+  <li><span class="ic">🔧</span>Solo agregas <strong>lo nuevo</strong> en el hijo (<code>mana</code>)</li>
+  <li><span class="ic">🧬</span>Si el padre cambia, el hijo se actualiza automáticamente</li>
+</ul>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 8  EJEMPLO 2 – MÉTODO NUEVO Y OVERRIDE
+══════════════════════════════════════ -->
+<div class="slide s-blue">
+<div class="num">8/10</div>
+<h2>Ejemplo 2 — método nuevo <span class="hl">+</span> override</h2>
+<p>El Mago tiene un método nuevo (<code>lanzar_hechizo</code>) y <em>sobreescribe</em> <code>mostrar_estado</code> para incluir el maná.</p>
+
+<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:12px">
+<pre style="flex:1;min-width:250px"><code><span class="cm"># Método NUEVO del Mago</span>
+<span class="kw">def</span> <span class="fn">lanzar_hechizo</span>(<span class="nb">self</span>, objetivo):
+    costo   = <span class="nu">20</span>
+    daño    = <span class="nb">self</span>.ataque * <span class="nu">2</span>   <span class="cm"># doble de daño</span>
+
+    <span class="kw">if</span> <span class="nb">self</span>.mana >= costo:
+        objetivo.vida -= daño
+        <span class="nb">self</span>.mana    -= costo
+        <span class="nb">print</span>(<span class="st">f"¡Hechizo! {daño} daño mágico."</span>)
+    <span class="kw">else</span>:
+        <span class="nb">print</span>(<span class="st">"Sin maná."</span>)
+
+<span class="cm"># OVERRIDE: sobreescribe mostrar_estado del padre</span>
+<span class="kw">def</span> <span class="fn">mostrar_estado</span>(<span class="nb">self</span>):
+    <span class="nb">print</span>(<span class="st">f"[{</span><span class="nb">self</span><span class="st">.nombre}] Vida:{</span><span class="nb">self</span><span class="st">.vida} "</span>
+          <span class="st">f"Maná:{</span><span class="nb">self</span><span class="st">.mana}"</span>)</code></pre>
+
+  <div style="flex:1;min-width:190px">
+    <div class="flow" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div class="fbox blue" style="width:100%">🔮 <strong>mago.lanzar_hechizo(guerrero)</strong></div>
+      <div style="margin-left:16px;display:flex;gap:16px">
+        <div>
+          <div style="font-size:.75rem;color:#ff5555">mana &lt; 20 ❌</div>
+          <div class="fbox red" style="margin-top:4px">"Sin maná"</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:#50fa7b">mana ≥ 20 ✅</div>
+          <div class="fbox green" style="margin-top:4px">vida -40<br>mana -20</div>
+        </div>
+      </div>
+      <div class="fbox orange" style="width:100%;margin-top:8px">🛡 <strong>guerrero.atacar(mago)</strong><br><small>(método heredado)</small></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 9  EJEMPLO 2 – CÓDIGO COMPLETO
+══════════════════════════════════════ -->
+<div class="slide s-dark">
+<div class="num">9/10</div>
+<h2>Ejemplo 2 — <span class="hl">Código completo</span></h2>
+
+<pre style="font-size:.8rem"><code><span class="kw">class</span> <span class="fn">Personaje</span>:                               <span class="cm"># PADRE</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nb">self</span>, nombre, vida, ataque):
+        <span class="nb">self</span>.nombre = nombre ; <span class="nb">self</span>.vida = vida ; <span class="nb">self</span>.ataque = ataque
+    <span class="kw">def</span> <span class="fn">atacar</span>(<span class="nb">self</span>, obj): obj.vida -= <span class="nb">self</span>.ataque ; <span class="nb">print</span>(<span class="st">f"{</span><span class="nb">self</span><span class="st">.nombre} ataca por {</span><span class="nb">self</span><span class="st">.ataque}"</span>)
+    <span class="kw">def</span> <span class="fn">mostrar_estado</span>(<span class="nb">self</span>): <span class="nb">print</span>(<span class="st">f"[{</span><span class="nb">self</span><span class="st">.nombre}] Vida:{</span><span class="nb">self</span><span class="st">.vida}"</span>)
+
+<span class="kw">class</span> <span class="fn">Mago</span>(<span class="fn">Personaje</span>):                          <span class="cm"># HIJO</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nb">self</span>, nombre, vida, ataque, mana):
+        <span class="nb">super</span>().<span class="fn">__init__</span>(nombre, vida, ataque)    <span class="cm"># reutiliza al padre</span>
+        <span class="nb">self</span>.mana = mana
+    <span class="kw">def</span> <span class="fn">lanzar_hechizo</span>(<span class="nb">self</span>, objetivo):
+        <span class="kw">if</span> <span class="nb">self</span>.mana >= <span class="nu">20</span>:
+            objetivo.vida -= <span class="nb">self</span>.ataque * <span class="nu">2</span> ; <span class="nb">self</span>.mana -= <span class="nu">20</span>
+            <span class="nb">print</span>(<span class="st">f"¡Hechizo! {</span><span class="nb">self</span><span class="st">.ataque*2} daño mágico. Maná: {</span><span class="nb">self</span><span class="st">.mana}"</span>)
+        <span class="kw">else</span>: <span class="nb">print</span>(<span class="st">"Sin maná."</span>)
+    <span class="kw">def</span> <span class="fn">mostrar_estado</span>(<span class="nb">self</span>):                    <span class="cm"># override</span>
+        <span class="nb">print</span>(<span class="st">f"[{</span><span class="nb">self</span><span class="st">.nombre}] Vida:{</span><span class="nb">self</span><span class="st">.vida} Maná:{</span><span class="nb">self</span><span class="st">.mana}"</span>)
+
+guerrero = <span class="fn">Personaje</span>(<span class="st">"Guerrero"</span>, <span class="nu">120</span>, <span class="nu">12</span>)
+mago     = <span class="fn">Mago</span>(<span class="st">"Gandalf"</span>, <span class="nu">70</span>, <span class="nu">20</span>, <span class="nu">100</span>)
+
+guerrero.mostrar_estado()   <span class="cm"># [Guerrero] Vida:120</span>
+mago.mostrar_estado()       <span class="cm"># [Gandalf]  Vida:70 Maná:100</span>
+mago.lanzar_hechizo(guerrero) <span class="cm"># ¡Hechizo! 40 daño. Maná: 80</span>
+guerrero.atacar(mago)         <span class="cm"># Guerrero ataca por 12</span>
+guerrero.mostrar_estado()   <span class="cm"># [Guerrero] Vida:80</span>
+mago.mostrar_estado()       <span class="cm"># [Gandalf]  Vida:58 Maná:80</span></code></pre>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 10  RESUMEN
+══════════════════════════════════════ -->
+<div class="slide s-cover">
+<div class="num">10/10</div>
+<h2 style="font-size:2rem">Resumen <span class="hl">⚔️</span></h2>
+
+<div class="cards c2" style="margin-top:18px">
+  <div class="card">
+    <div class="card-icon">🏗️</div>
+    <h3>Clase</h3>
+    <p>Molde que define atributos y métodos. <code>class Personaje:</code></p>
+  </div>
+  <div class="card">
+    <div class="card-icon">⚙️</div>
+    <h3>__init__ y self</h3>
+    <p>Constructor que inicializa los datos. <code>self</code> apunta al objeto creado.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon">🔧</div>
+    <h3>Métodos</h3>
+    <p>Funciones del objeto. Modifican o consultan sus propios atributos.</p>
+  </div>
+  <div class="card">
+    <div class="card-icon">🧬</div>
+    <h3>Herencia + super()</h3>
+    <p>La clase hija reutiliza al padre y agrega lo suyo. <code>super().__init__(…)</code></p>
+  </div>
+</div>
+
+<div style="margin-top:22px;padding:14px 20px;background:rgba(139,233,253,.07);border-left:4px solid #8be9fd;border-radius:8px;max-width:680px">
+  <p style="font-size:.97rem"><span class="hl">Regla de oro:</span> si dos clases comparten atributos/métodos, usa herencia. Si no, defínelas por separado. 🚀</p>
+</div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- NAVEGACIÓN -->
+<div class="nav">
+  <button id="bp" onclick="go(-1)" disabled>← Anterior</button>
+  <div class="dots" id="dots"></div>
+  <span class="prog" id="pg">1 / 10</span>
+  <button id="bn" onclick="go(1)">Siguiente →</button>
+</div>
+
+<script>
+const slides=document.querySelectorAll('.slide'),n=slides.length;let c=0;
+const dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i===0?' active':'');d.onclick=()=>goTo(i);dotsEl.appendChild(d)});
+function goTo(i){slides[c].classList.remove('active');dotsEl.children[c].classList.remove('active');c=i;slides[c].classList.add('active');dotsEl.children[c].classList.add('active');document.getElementById('pg').textContent=(c+1)+' / '+n;document.getElementById('bp').disabled=c===0;document.getElementById('bn').disabled=c===n-1}
+function go(d){const nx=c+d;if(nx>=0&&nx<n)goTo(nx)}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1)});
+</script>
+</body>
+</html>
